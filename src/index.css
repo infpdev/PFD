@@ -1,0 +1,289 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Official Government-inspired palette with modern twist */
+    --background: 210 25% 97%;
+    --foreground: 215 28% 17%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+
+    /* Deep professional blue - trust & authority */
+    --primary: 213 80% 35%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 213 75% 50%;
+    --primary-glow: 213 85% 60%;
+
+    /* Warm accent for CTAs */
+    --accent: 158 64% 40%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 158 55% 50%;
+
+    --secondary: 210 20% 93%;
+    --secondary-foreground: 215 28% 25%;
+
+    --muted: 210 15% 90%;
+    --muted-foreground: 215 15% 45%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 158 64% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 214 25% 85%;
+    --input: 214 25% 85%;
+    --ring: 213 80% 35%;
+
+    --radius: 0.625rem;
+
+    /* Form specific */
+    --form-section-bg: 210 30% 98%;
+    --form-field-focus: 213 80% 35%;
+    --form-label: 215 20% 35%;
+    --form-helper: 215 15% 55%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg,
+        hsl(213 80% 35%),
+        hsl(213 75% 45%));
+    --gradient-header: linear-gradient(135deg,
+        hsl(213 80% 30%),
+        hsl(200 75% 35%));
+    --gradient-accent: linear-gradient(135deg,
+        hsl(158 64% 40%),
+        hsl(158 55% 50%));
+    --gradient-subtle: linear-gradient(180deg,
+        hsl(210 25% 97%),
+        hsl(210 20% 94%));
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(215 28% 17% / 0.05);
+    --shadow-md:
+      0 4px 6px -1px hsl(215 28% 17% / 0.08),
+      0 2px 4px -1px hsl(215 28% 17% / 0.04);
+    --shadow-lg:
+      0 10px 25px -5px hsl(215 28% 17% / 0.1),
+      0 8px 10px -6px hsl(215 28% 17% / 0.05);
+    --shadow-card:
+      0 1px 3px hsl(215 28% 17% / 0.08), 0 1px 2px hsl(215 28% 17% / 0.06);
+    --shadow-elevated: 0 20px 40px -10px hsl(213 80% 35% / 0.15);
+  }
+
+  .dark {
+    --background: 215 28% 10%;
+    --foreground: 210 20% 95%;
+
+    background-color: hsl(var(--background));
+    width: 100%;
+    height: 100%;
+    flex: auto;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: hsl(var(--foreground));
+
+    --card: 215 25% 14%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 215 25% 14%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 213 75% 55%;
+    --primary-foreground: 215 28% 10%;
+    --primary-light: 213 70% 65%;
+    --primary-glow: 213 80% 70%;
+
+    --accent: 158 55% 50%;
+    --accent-foreground: 215 28% 10%;
+
+    --secondary: 215 20% 20%;
+    --secondary-foreground: 210 15% 85%;
+
+    --muted: 215 18% 22%;
+    --muted-foreground: 215 15% 60%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 158 55% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 215 20% 25%;
+    --input: 215 20% 25%;
+    --ring: 213 75% 55%;
+
+    --form-section-bg: 215 22% 16%;
+    --form-field-focus: 213 75% 55%;
+    --form-label: 210 15% 75%;
+    --form-helper: 215 12% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-serif tracking-tight;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50;
+  }
+
+  .form-section {
+    @apply bg-[hsl(var(--form-section-bg))] rounded-xl p-6 border border-border/50;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Signature canvas styling */
+.signature-canvas {
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted/30 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/30 transition-colors;
+}
+
+/* Form field animations */
+.form-field-enter {
+  animation: formFieldEnter 0.3s ease-out forwards;
+}
+
+@keyframes formFieldEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus ring enhancement */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  @apply ring-2 ring-primary/30 ring-offset-2 ring-offset-background;
+}
+
+
+
+.admin-container {
+  border: 1px hsl(var(--foreground)/ 10%) solid;
+  border-radius: 15px;
+
+  box-shadow: 0 0 30px 1px hsl(var(--foreground)/ 10%);
+}
+
+.input {
+  
+  transition: border-color 0.2s ease;
+}
+
+.input:focus {
+  border: 1px dashed hsl(var(--foreground) / 30%);
+  outline: none !important;
+  border-color: hsl(var(--foreground) / 60%);
+}
+
+
+.no-select {
+  -webkit-user-select: none; /* Chrome, Safari */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* Old Edge */
+  user-select: none;         /* Standard */
+}
