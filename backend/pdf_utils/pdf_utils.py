@@ -645,7 +645,7 @@ def readDefaults():
 
     defaults = cfg["defaults"] if "defaults" in cfg else {}
     company_name = defaults.get("company_name", fallback="").strip().upper()
-    password = defaults.get("password", fallback=1)
+    password = defaults.get("password", fallback="").strip()
     
     return {
         "company_name" : company_name,

@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+import secrets
 import signal
 import socket
 import sys
@@ -14,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from backend.pdf_utils.send_mail import send_mail
 from backend.models import Payload
-from backend.pdf_utils.pdf_utils import form2_to_tsv, generate_merged_forms
+from backend.pdf_utils.pdf_utils import form2_to_tsv, generate_merged_forms, readDefaults
 from fastapi.middleware.cors import CORSMiddleware
 from backend.json_to_excel import combine_json_to_excel
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -26,7 +27,11 @@ class SetPassBody(BaseModel):
 
 
 # Submission password - change this for your deployment
-SUBMISSION_PASSWORD = "1"
+
+defaults = readDefaults()
+password = defaults.get("password", "").strip()
+SUBMISSION_PASSWORD = password if password else secrets.token_urlsafe(12)
+
 
 if getattr(sys, "frozen", False):
     BASE_DIR = os.path.dirname(sys.executable)

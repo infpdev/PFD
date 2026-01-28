@@ -87,7 +87,7 @@ if __name__ == "__main__":
     
     app.state.ONE_TIME_ADMIN_TOKEN = secrets.token_urlsafe(128)
 
-    app.state.SUBMISSION_PASSWORD = "1"
+    # app.state.SUBMISSION_PASSWORD = "1"
 
     
     webbrowser.open(f"http://localhost:8000/admin?token={app.state.ONE_TIME_ADMIN_TOKEN}")

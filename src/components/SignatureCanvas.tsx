@@ -1,22 +1,19 @@
-import React, { useRef, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Eraser, Pen } from "lucide-react";
-import { SignatureData, SignatureBBox } from "@/types/epf-forms";
+import React, { useRef, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Eraser, Pen } from 'lucide-react';
+import { SignatureData } from '@/types/epf-forms';
 
 interface SignatureCanvasProps {
   onSignatureChange: (sig: SignatureData | null) => void;
   initialSignature?: string; // still just the image
-  initialBbox?: SignatureBBox | null; // optional initial bbox
-  initialBbox?: SignatureBBox | null; // optional initial bbox
   width?: number;
   height?: number;
 }
 
+
 export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
   onSignatureChange,
   initialSignature,
-  initialBbox,
-  initialBbox,
   width = 400,
   height = 150,
 }) => {
@@ -28,23 +25,25 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
   const maxXRef = useRef<number>(-Infinity);
   const maxYRef = useRef<number>(-Infinity);
 
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     // Set up canvas
-    ctx.strokeStyle = "#1a365d";
+    ctx.strokeStyle = '#1a365d';
     ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
     // Fill with white background
     // ctx.fillStyle = '#ffffff';
     // ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
 
     // Load initial signature if provided
     if (initialSignature) {
@@ -52,19 +51,10 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
       img.onload = () => {
         ctx.drawImage(img, 0, 0);
         setHasSignature(true);
-
-        // Restore bbox if provided, so that signature data remains complete
-        if (initialBbox && isFinite(initialBbox.x) && isFinite(initialBbox.y)) {
-          minXRef.current = initialBbox.x;
-          minYRef.current = initialBbox.y;
-          maxXRef.current = initialBbox.x + initialBbox.width;
-          maxYRef.current = initialBbox.y + initialBbox.height;
-        }
       };
       img.src = initialSignature;
     }
-  }, [initialSignature, initialBbox]);
-  }, [initialSignature, initialBbox]);
+  }, [initialSignature]);
 
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -74,7 +64,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
-    if ("touches" in e) {
+    if ('touches' in e) {
       return {
         x: (e.touches[0].clientX - rect.left) * scaleX,
         y: (e.touches[0].clientY - rect.top) * scaleY,
@@ -96,7 +86,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
     maxYRef.current = -Infinity;
 
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext('2d');
     if (!ctx) return;
 
     const { x, y } = getCoordinates(e);
@@ -110,7 +100,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
     if (!isDrawing) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext('2d')
     ctx.globalCompositeOperation = "source-over";
     if (!ctx) return;
 
@@ -123,6 +113,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
     maxXRef.current = Math.max(maxXRef.current, x);
     maxYRef.current = Math.max(maxYRef.current, y);
 
+
     ctx.lineTo(x, y);
     ctx.stroke();
     setHasSignature(true);
@@ -133,7 +124,8 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
 
     const canvas = canvasRef.current;
     if (canvas && hasSignature) {
-      const signatureData = canvas.toDataURL("image/png");
+
+      const signatureData = canvas.toDataURL('image/png');
 
       const bbox = {
         x: minXRef.current,
@@ -151,17 +143,19 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
 
   const clearSignature = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext('2d');
     if (!ctx || !canvas) return;
 
     // ctx.fillStyle = '#ffffff';
     // ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+
     minXRef.current = Infinity;
     minYRef.current = Infinity;
     maxXRef.current = -Infinity;
     maxYRef.current = -Infinity;
+
 
     setHasSignature(false);
     onSignatureChange(null);
