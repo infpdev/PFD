@@ -35,7 +35,7 @@ export const DUMMY_PAYLOAD: Payload = {
         bank_account_no: "1234567890",
         ifsc_code: "SBIN0000132",
         aadhaar_no: "232323232323",
-        pan_no: "ACPPU3719H",
+        pan_no: "AAAPA1234A",
       },
       declaration: {
         place: "Bidadi",
