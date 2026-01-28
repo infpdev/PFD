@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import NotFound from "./NotFound";
 // const API = "http://localhost:8000";
+import { QRCodeCanvas } from "qrcode.react";
+
 const API = "";
 function Admin() {
   const [showPassword, setShowPassword] = useState(false);
@@ -109,8 +111,7 @@ function Admin() {
         const password = data.pass;
         setIsAdmin(true);
         setPass(password);
-        setFieldError("ip", data.ip);
-        // strip token from URL
+        setFieldError("ip", data.ip); // strip token from URL
       } catch (e) {
         console.log(e);
       }
@@ -240,11 +241,19 @@ function Admin() {
   if (!isAdmin) return <NotFound />;
 
   return (
-    <div className="dark w-screen h-screen flex flex-col items-center justify-center">
+    <div className="dark bg-black w-screen h-screen flex flex-col items-center justify-center">
       <div
         className="admin-container flex flex-col
-        space-y-10 items-center w-[25vw] min-w-[350px] min-h-[60vh] pt-20 pb-10"
+        space-y-10 items-center w-[25vw] min-w-[350px] sm:min-w-[478px] min-h-[60vh] pt-10 pb-10"
       >
+        {errors2.ip && (
+          <QRCodeCanvas
+            className="qr transition-transform"
+            value={`http://${errors2.ip}`}
+            size={200}
+          />
+        )}
+
         <div className="relative flex items-center justify-center mb-10">
           <span
             className={`absolute transition-opacity  text-green-200 hover:opacity-70 hover:cursor-pointer
@@ -252,7 +261,7 @@ function Admin() {
           >
             serving at
             <br />
-            http://{errors2.ip}
+            {errors2.ip}
           </span>
 
           <span
@@ -403,13 +412,14 @@ function Admin() {
         <div className="relative flex items-center justify-center mb-10">
           <span
             className={`absolute inline-block w-fit no-select text-sm transition-all duration-300 whitespace-nowrap
-    ${(!errors2.kill && errors2.excel === "Unauthorized") ||
-                errors2.excel === "No files to combine"
-                ? "opacity-100 translate-y-0 text-red-500/70"
-                : errors2.excel === "ok"
-                  ? "opacity-100 translate-y-0 text-green-300/70"
-                  : "opacity-0 -translate-y-1 pointer-events-none"
-              }`}
+    ${
+      (!errors2.kill && errors2.excel === "Unauthorized") ||
+      errors2.excel === "No files to combine"
+        ? "opacity-100 translate-y-0 text-red-500/70"
+        : errors2.excel === "ok"
+          ? "opacity-100 translate-y-0 text-green-300/70"
+          : "opacity-0 -translate-y-1 pointer-events-none"
+    }`}
           >
             {errors2.excel === "Unauthorized"
               ? "Unable to generate excel"

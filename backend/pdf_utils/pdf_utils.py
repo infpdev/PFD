@@ -648,10 +648,12 @@ def readDefaults():
     defaults = cfg["defaults"] if "defaults" in cfg else {}
     company_name = defaults.get("company_name", fallback="").strip().upper()
     password = defaults.get("password", fallback="").strip()
+    show_preview = cfg.getboolean("defaults", "show_preview", fallback=False)
     
     return {
         "company_name" : company_name,
         "password": password,
+        "show_preview": show_preview,
         }
 
 defaultValuesFromConfig = readDefaults()
@@ -822,7 +824,7 @@ def prepare_form11_pdf_fields(data: Form11Data) -> dict:
         "member_of_eps": data.was_eps_member,
 
 
-        "uan": pe.uan if pe_details_allow else "",
+        "uan": pe.uan if pe.uan else "",
         "pf_no": pe.previous_pf_account_no if pe_details_allow else "",
         "exit_date_day": f"{pe.exit_date.day:02d}" if pe_details_allow and pe.exit_date else "",
         "exit_date_month": f"{pe.exit_date.month:02d}" if pe_details_allow and pe.exit_date else "",

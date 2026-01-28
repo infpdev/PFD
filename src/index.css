@@ -55,18 +55,26 @@
     --form-helper: 215 15% 55%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg,
-        hsl(213 80% 35%),
-        hsl(213 75% 45%));
-    --gradient-header: linear-gradient(135deg,
-        hsl(213 80% 30%),
-        hsl(200 75% 35%));
-    --gradient-accent: linear-gradient(135deg,
-        hsl(158 64% 40%),
-        hsl(158 55% 50%));
-    --gradient-subtle: linear-gradient(180deg,
-        hsl(210 25% 97%),
-        hsl(210 20% 94%));
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(213 80% 35%),
+      hsl(213 75% 45%)
+    );
+    --gradient-header: linear-gradient(
+      135deg,
+      hsl(213 80% 30%),
+      hsl(200 75% 35%)
+    );
+    --gradient-accent: linear-gradient(
+      135deg,
+      hsl(158 64% 40%),
+      hsl(158 55% 50%)
+    );
+    --gradient-subtle: linear-gradient(
+      180deg,
+      hsl(210 25% 97%),
+      hsl(210 20% 94%)
+    );
 
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(215 28% 17% / 0.05);
@@ -260,17 +268,14 @@ textarea:focus-visible {
   @apply ring-2 ring-primary/30 ring-offset-2 ring-offset-background;
 }
 
-
-
 .admin-container {
-  border: 1px hsl(var(--foreground)/ 10%) solid;
+  border: 1px hsl(var(--foreground) / 10%) solid;
   border-radius: 15px;
-
-  box-shadow: 0 0 30px 1px hsl(var(--foreground)/ 10%);
+background-color: hsl(var(--background)/70%);
+  box-shadow: 0 0 30px 1px hsl(var(--foreground) / 15%);
 }
 
 .input {
-  
   transition: border-color 0.2s ease;
 }
 
@@ -280,10 +285,24 @@ textarea:focus-visible {
   border-color: hsl(var(--foreground) / 60%);
 }
 
-
 .no-select {
   -webkit-user-select: none; /* Chrome, Safari */
-  -moz-user-select: none;    /* Firefox */
-  -ms-user-select: none;     /* Old Edge */
-  user-select: none;         /* Standard */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Old Edge */
+  user-select: none; /* Standard */
+}
+
+.qr {
+  transition: all 0.5s ease;
+  background-color: transparent;
+  z-index: 999;
+  padding: 5px;
+  border-radius: 15px;
+  box-shadow:0 0 20px hsl(var(--foreground)/30%);
+}
+
+.qr:hover {
+  transform: scale(1.7);
+  cursor: none;
+  margin-top: 60px;
 }

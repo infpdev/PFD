@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { FormField } from "@/components/FormField";
 import { FormSection } from "@/components/FormSection";
 import { RadioGroup } from "@/components/RadioOption";
-import { History, Building2 } from "lucide-react";
+import { History, Building2, Info } from "lucide-react";
 import type { PreviousEmploymentDetails } from "@/types/epf-forms";
 
 interface MembershipHistoryStepProps {
@@ -16,15 +16,6 @@ interface MembershipHistoryStepProps {
   onPreviousEmploymentChange: (data: PreviousEmploymentDetails) => void;
   errors: Record<string, string>;
 }
-
-const EMPTY_PREVIOUS_EMPLOYMENT: PreviousEmploymentDetails = {
-  uan: "",
-  previous_pf_account_no: "",
-  exit_date: "",
-  scheme_certificate_no: "",
-  ppo_no: "",
-};
-
 
 export const MembershipHistoryStep: React.FC<MembershipHistoryStepProps> = ({
   wasEpfMember,
@@ -43,8 +34,17 @@ export const MembershipHistoryStep: React.FC<MembershipHistoryStepProps> = ({
     onPreviousEmploymentChange({ ...previousEmployment, [field]: value });
   };
 
+  const EMPTY_PREVIOUS_EMPLOYMENT: PreviousEmploymentDetails = {
+    uan: previousEmployment.uan ?? "",
+    previous_pf_account_no: "",
+    exit_date: "",
+    scheme_certificate_no: "",
+    ppo_no: "",
+  };
+
   useEffect(() => {
-    if (!showPreviousDetails) onPreviousEmploymentChange(EMPTY_PREVIOUS_EMPLOYMENT);
+    if (!showPreviousDetails)
+      onPreviousEmploymentChange(EMPTY_PREVIOUS_EMPLOYMENT);
   }, [showPreviousDetails]);
 
   return (
@@ -84,6 +84,38 @@ export const MembershipHistoryStep: React.FC<MembershipHistoryStepProps> = ({
           />
         </div>
       </FormSection>
+
+      <span className="flex items-center gap-1 py-5">
+        <Info className="w-4 h-4" /> Watch
+        <a
+          href="https://youtu.be/qRyarSRw83E?si=p7CMbqR_PTpn7EeQ"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline md:no-underline hover:underline"
+        >
+          how to generate UAN using Umang app
+        </a>
+        for information
+      </span>
+      {!showPreviousDetails && (
+        <FormSection
+          title="Universal Account Number (UAN)"
+          description="Generate UAN using UMANG and AadhaarFaceRD apps and enter the UAN here"
+          icon={<Building2 className="h-5 w-5" />}
+          className=""
+        >
+          <FormField
+            label="Universal Account Number (UAN)"
+            name="uan"
+            value={previousEmployment.uan}
+            onChange={(v) => handlePreviousChange("uan", v)}
+            placeholder="12-digit UAN"
+            error={errors.uan}
+            maxLength={12}
+            sensitive
+          />
+        </FormSection>
+      )}
 
       {showPreviousDetails && (
         <FormSection

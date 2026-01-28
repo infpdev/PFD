@@ -13,6 +13,7 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, status, HT
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import qrcode
 from backend.pdf_utils.send_mail import send_mail
 from backend.models import Payload
 from backend.pdf_utils.pdf_utils import form2_to_tsv, generate_merged_forms, readDefaults
@@ -48,10 +49,15 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 app = FastAPI()
 
 defaults = readDefaults()
+show_preview = defaults.get("show_preview", False)
 password = defaults.get("password", "").strip()
 SUBMISSION_PASSWORD = password if password else secrets.token_urlsafe(12)
 app.state.SUBMISSION_PASSWORD = SUBMISSION_PASSWORD
 
+
+print("===============DEFAULTS===============")
+print("# show_preview = ", show_preview, "\nSubmitted form will be sent back to the user as a preview. \nTo disable this, edit config.ini and set show_preview = False and refresh the admin page" if show_preview else "\nSubmitted forms will not be sent back as a preview.\nTo enable preview, edit config.ini and set show_preview = True and refresh the admin page")
+print("# Default password not set. Using random password. To set a default password, edit config.ini and set a value to the password field.\nChanges will reflect on restarting the server." if not password else f"# Default password set to: {password}\nTo change, edit config.ini and change the value of password field.\nChanges will reflect on restarting the server.\n\n")
 
 
 app.add_middleware(
@@ -122,6 +128,9 @@ def process_forms(payload: Payload, background_tasks: BackgroundTasks, request: 
     
     print(f"PDF generated: {base_filename}")
     
+    if not show_preview:
+        return JSONResponse({"ok":True, "preview":False})
+    
     return FileResponse(
         pdf_path,
         media_type="application/pdf",
@@ -184,6 +193,8 @@ async def ws_watchdog():
 @app.get("/admin")
 def serve_admin(request: Request, token: str | None = None):
     ONE_TIME_ADMIN_TOKEN = getattr(request.app.state, "ONE_TIME_ADMIN_TOKEN", None)
+    
+    global show_preview
 
     # 1️⃣ First-time unlock via OTA
     if token and token == ONE_TIME_ADMIN_TOKEN:
@@ -198,11 +209,15 @@ def serve_admin(request: Request, token: str | None = None):
             samesite="strict",
         )
         print("Admin page accessed. If not you, CTRL C to terminate the server.")
+        show_preview = readDefaults().get("show_preview", False)
+        print("\n\n# show_preview = ", show_preview, "\nSubmitted form will be sent back to the user as a preview. \nTo disable this, edit config.ini and set show_preview = False and refresh the admin page" if show_preview else "\nSubmitted forms will not be sent back as a preview.\nTo enable preview, edit config.ini and set show_preview = True and refresh the admin page\n\n")
         return response
 
     # 2️⃣ Subsequent access via cookie
     if request.cookies.get("admin_session") == "1":
         print("Admin page accessed. If not you, CTRL C to terminate the server.")
+        show_preview = readDefaults().get("show_preview", False)
+        print("\n\n# show_preview = ", show_preview, "\nSubmitted form will be sent back to the user as a preview. \nTo disable this, edit config.ini and set show_preview = False and refresh the admin page" if show_preview else "\nSubmitted forms will not be sent back as a preview.\nTo enable preview, edit config.ini and set show_preview = True and refresh the admin page\n\n")
         return FileResponse(resource_path("dist/index.html"))
 
     # 3️⃣ Deny everything else
@@ -225,7 +240,9 @@ def get_local_ip():
     finally:
         s.close()
 
-
+def generate_qr(url: str, output_path: Path):
+    img = qrcode.make(url)
+    img.save(output_path)
 
 @app.post("/admin/pass")
 def admin_pass(request: Request):
@@ -233,6 +250,9 @@ def admin_pass(request: Request):
 
     ip = get_local_ip()
     port = 8000
+    
+    APP_URL = f"http://{ip}:{port}"
+    QR_PATH = Path("qr.png")
 
     print(f"Local URL: http://{ip}:{port}")
 

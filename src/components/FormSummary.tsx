@@ -144,7 +144,7 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
     if (
       (payload.forms.form_11.declaration.signature_data?.image ===
         payload.forms.form_2.declaration.signature_data?.image ||
-      payload.forms.form_2.declaration.same_signature) &&
+        payload.forms.form_2.declaration.same_signature) &&
       payload.forms.form_11.declaration.signature_data?.bbox
     ) {
       payload.forms.form_2.declaration.signature_data!.image = "same";
@@ -176,11 +176,30 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
         throw new Error(errorData.detail || "Failed to generate PDF");
       }
 
-      // Download PDF
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, "_blank");
-      window.URL.revokeObjectURL(url);
+      const contentType = res.headers.get("content-type") || "";
+
+      // Case 1: Preview disabled (successful, no PDF)
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+
+        if (data.preview === false) {
+          // show info, not error
+          toast({
+            title: "Submitted successfully",
+            description: "You can now close this tab.",
+          });
+        }
+
+        // future-proofing
+      }
+
+      // Case 2: Preview enabled (PDF)
+      else if (contentType.includes("application/pdf")) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, "_blank");
+        window.URL.revokeObjectURL(url);
+      }
 
       // --- To download the PDF ---
 

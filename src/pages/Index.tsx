@@ -266,7 +266,7 @@ const Index: React.FC = () => {
       setDocumentsLoaded(true);
     };
     if (!isDemo) loadDocs();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-save form11 data on change
@@ -340,6 +340,9 @@ const Index: React.FC = () => {
         newErrors.previous_pf_account_no = "Previous PF Account No is required";
       if (!form11Data.previous_employment?.exit_date)
         newErrors.exit_date = "Exit date is required";
+    } else {
+      if (!/^[0-9]{12}$/.test(form11Data.previous_employment?.uan))
+        newErrors.uan = "UAN must be a 12-digit number";
     }
 
     // International

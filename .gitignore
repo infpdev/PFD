@@ -29,3 +29,4 @@ log.txt
 *.pyc
 **/__pycache__
 *.spec
+**/overlay.pdf
