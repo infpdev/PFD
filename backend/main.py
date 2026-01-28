@@ -28,9 +28,6 @@ class SetPassBody(BaseModel):
 
 # Submission password - change this for your deployment
 
-defaults = readDefaults()
-password = defaults.get("password", "").strip()
-SUBMISSION_PASSWORD = password if password else secrets.token_urlsafe(12)
 
 
 if getattr(sys, "frozen", False):
@@ -49,6 +46,13 @@ OUTPUT_DIR = Path.cwd() / "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 app = FastAPI()
+
+defaults = readDefaults()
+password = defaults.get("password", "").strip()
+SUBMISSION_PASSWORD = password if password else secrets.token_urlsafe(12)
+app.state.SUBMISSION_PASSWORD = SUBMISSION_PASSWORD
+
+
 
 app.add_middleware(
     CORSMiddleware,

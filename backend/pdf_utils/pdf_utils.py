@@ -145,8 +145,10 @@ def form_11(c, data, extra: Optional[dict[str,Any]]):
         False: (502, 496),
     }
 
+    company_x = 450 - len(defaultValuesFromConfig.get("company_name","")) * 1.5
+
     FIELD_MAP = {
-        "company": (450,753, defaultValuesFromConfig.get("company_name","")),
+        "company": (company_x,753, defaultValuesFromConfig.get("company_name","")),
         "name": (350, 705, fields["name"].upper()),
         "name_declaration": (183, 265, fields["name"].upper(), True),
         "father_name": (350, 682, fields["father_name"].upper()),
