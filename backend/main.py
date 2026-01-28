@@ -210,14 +210,14 @@ def serve_admin(request: Request, token: str | None = None):
         )
         print("Admin page accessed. If not you, CTRL C to terminate the server.")
         show_preview = readDefaults().get("show_preview", False)
-        print("\n\n# show_preview = ", show_preview, "\nSubmitted form will be sent back to the user as a preview. \nTo disable this, edit config.ini and set show_preview = False and refresh the admin page" if show_preview else "\nSubmitted forms will not be sent back as a preview.\nTo enable preview, edit config.ini and set show_preview = True and refresh the admin page\n\n")
+        print("\n\n# show_preview = ", show_preview, "\nSubmitted form will be sent back to the user as a preview. \nTo disable this, edit config.ini and set show_preview = False and refresh the admin page\n\n" if show_preview else "\nSubmitted forms will not be sent back as a preview.\nTo enable preview, edit config.ini and set show_preview = True and refresh the admin page\n\n")
         return response
 
     # 2️⃣ Subsequent access via cookie
     if request.cookies.get("admin_session") == "1":
         print("Admin page accessed. If not you, CTRL C to terminate the server.")
         show_preview = readDefaults().get("show_preview", False)
-        print("\n\n# show_preview = ", show_preview, "\nSubmitted form will be sent back to the user as a preview. \nTo disable this, edit config.ini and set show_preview = False and refresh the admin page" if show_preview else "\nSubmitted forms will not be sent back as a preview.\nTo enable preview, edit config.ini and set show_preview = True and refresh the admin page\n\n")
+        print("\n\n# show_preview = ", show_preview, "\nSubmitted form will be sent back to the user as a preview. \nTo disable this, edit config.ini and set show_preview = False and refresh the admin page\n\n" if show_preview else "\nSubmitted forms will not be sent back as a preview.\nTo enable preview, edit config.ini and set show_preview = True and refresh the admin page\n\n")
         return FileResponse(resource_path("dist/index.html"))
 
     # 3️⃣ Deny everything else

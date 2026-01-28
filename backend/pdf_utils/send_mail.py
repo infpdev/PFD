@@ -44,7 +44,7 @@ def ensure_config():
             )
             
         shutil.copy(TEMPLATE, CONFIG_PATH)
-        raise RuntimeError("Created config.ini from template. Please edit the details and save to enable mailing")
+        raise RuntimeError("Created config.ini from template. Please edit the details and save to enable defaults and mailing")
     
     return True  # already existed
 
