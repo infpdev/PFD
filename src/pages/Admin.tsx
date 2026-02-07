@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import NotFound from "./NotFound";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ function Admin() {
                   path="config"
                   element={<ServerConfigPage setPage={setPage} />}
                 />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
           </div>

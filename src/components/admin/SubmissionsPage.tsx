@@ -174,7 +174,11 @@ const SubmissionsPage = ({ setPage, isDark }: SubmissionsPageProps) => {
   }, []);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:3000/ws/latest-submissions");
+    // const ws = new WebSocket("ws://localhost:3000/ws/latest-submissions");
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const host = window.location.host;
+
+    const ws = new WebSocket(`${protocol}://${host}/ws/latest-submissions`);
 
     ws.onopen = () => {
       console.log("Websocket connected..");
@@ -750,11 +754,13 @@ const SubmissionsPage = ({ setPage, isDark }: SubmissionsPageProps) => {
 
       {/* Data Grid */}
       <main className="flex-1 overflow-visible p-6 pt-0">
-        {!searchText && (<div className="flex-1 w-full relative">
-          <span className="absolute -translate-y-[125%] py-1 px-2 rounded w-auto whitespace-nowrap bg-muted text-foreground/70 text-sm font-medium">
-            showing recent submissions
-          </span>
-        </div>)}
+        {!searchText && (
+          <div className="flex-1 w-full relative">
+            <span className="absolute -translate-y-[125%] py-1 px-2 rounded w-auto whitespace-nowrap bg-muted text-foreground/70 text-sm font-medium">
+              showing recent submissions
+            </span>
+          </div>
+        )}
         <ThemeProvider theme={muiTheme}>
           <DataGrid
             rows={results}
