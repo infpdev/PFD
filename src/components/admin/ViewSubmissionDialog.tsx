@@ -25,7 +25,8 @@ import {
 import { Lock, Unlock, Save, TriangleAlert } from "lucide-react";
 import { SubmissionData, EPFNominee, EPSFamilyMember } from "@/types/epf-forms";
 
-const apiUrl = "http://localhost:3000";
+let apiUrl = "http://localhost:3000";
+apiUrl = "";
 
 interface ViewSubmissionDialogProps {
   open: boolean;

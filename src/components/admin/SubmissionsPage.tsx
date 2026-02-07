@@ -33,7 +33,8 @@ import "../../admin.css";
 import Index from "@/pages/Index";
 import { toast } from "@/hooks/use-toast";
 
-const apiUrl = "http://localhost:3000";
+let apiUrl = "http://localhost:3000";
+apiUrl = "";
 
 const SEARCH_TYPES = ["Name", "Uan", "Date", "Eno"] as const;
 type SearchType = (typeof SEARCH_TYPES)[number];

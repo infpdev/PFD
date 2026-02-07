@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Eye, EyeOff, Power, PowerOff, RefreshCw } from "lucide-react";
 
-const apiUrl = "http://localhost:3000";
+let apiUrl = "http://localhost:3000";
+apiUrl = "";
 
 const ServerConfigPage = ({ setPage }) => {
   const [serverStatus, setServerStatus] = useState<

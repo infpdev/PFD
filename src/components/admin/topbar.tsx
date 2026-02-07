@@ -3,7 +3,8 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import { useContext, useEffect, useState } from "react";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import { LogOut } from "lucide-react";
-const apiUrl = "http://localhost:3000";
+let apiUrl = "http://localhost:3000";
+apiUrl = "";
 
 export default function Topbar({ page, setIsDarkAdminState }) {
   const [isDark, setIsDark] = useState(false);

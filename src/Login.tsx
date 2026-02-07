@@ -3,7 +3,8 @@ import React, { useEffect, useState } from "react";
 import { Circle } from "lucide-react";
 import { Button } from "./components/ui/button";
 
-const apiUrl = "http://localhost:3000";
+let apiUrl = "http://localhost:3000";
+apiUrl = "";
 
 function Login() {
   const [userName, setUsername] = useState("");

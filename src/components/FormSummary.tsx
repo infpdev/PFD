@@ -119,7 +119,8 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
   }, []);
 
   // const apiUrl = `http://${apiHost}:${apiPort}`;
-  const apiUrl = "http://localhost:3000";
+  let apiUrl = "http://localhost:3000";
+  apiUrl = "";
 
   const processForms = async (submissionPassword: string) => {
     if (!form11Data || !form2Data) return;
