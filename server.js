@@ -1240,10 +1240,11 @@ app.use((req, res) => {
   return res.status(404).sendFile(path.resolve("dist/client/404.html"));
 });
 
-const server = app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
-});
+const PORT = process.env.PORT || 3000;
 
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
 server.on("upgrade", (req, socket, head) => {
   const cookies = parseCookies(req.headers.cookie);
   const sessionId = cookies?.session_id;
