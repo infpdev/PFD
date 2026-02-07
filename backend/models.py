@@ -121,15 +121,15 @@ class PensionNominee(BaseModel):
 
 
 class Form2Data(BaseModel):
-    member_name: str
-    father_husband_name: str
-    date_of_birth: str
-    gender: str
+    member_name: Optional[str] = None
+    father_husband_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
     employee_no: Optional[str] = None
     pf_account_no: Optional[str] = None
-    marital_status: str
-    mobile_no: str
-    permanent_address: str
+    marital_status: Optional[str] = None
+    mobile_no: Optional[str] = None
+    permanent_address: Optional[str] = None
 
     epf_nominees: List[EPFNominee] = Field(default_factory=list)
     has_no_family_epf: bool

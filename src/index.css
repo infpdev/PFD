@@ -7,6 +7,8 @@
 @layer base {
   :root {
     /* Official Government-inspired palette with modern twist */
+    --date-icon-invert: 0;
+
     --background: 210 25% 97%;
     --foreground: 215 28% 17%;
 
@@ -90,16 +92,12 @@
   }
 
   .dark {
+    --date-icon-invert: 1;
+
     --background: 215 28% 10%;
     --foreground: 210 20% 95%;
 
     background-color: hsl(var(--background));
-    width: 100%;
-    height: 100%;
-    flex: auto;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
     color: hsl(var(--foreground));
 
     --card: 215 25% 14%;
@@ -237,11 +235,15 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-muted/30 rounded-full;
+  background: transparent;
+}
+
+::-webkit-scrollbar-track:hover {
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/30 transition-colors;
+  @apply bg-muted-foreground/40 rounded-full hover:bg-muted-foreground/30 transition-colors;
 }
 
 /* Form field animations */
@@ -271,7 +273,7 @@ textarea:focus-visible {
 .admin-container {
   border: 1px hsl(var(--foreground) / 10%) solid;
   border-radius: 15px;
-background-color: hsl(var(--background)/70%);
+  background-color: hsl(var(--background) / 70%);
   box-shadow: 0 0 30px 1px hsl(var(--foreground) / 15%);
 }
 
@@ -298,11 +300,15 @@ background-color: hsl(var(--background)/70%);
   z-index: 999;
   padding: 5px;
   border-radius: 15px;
-  box-shadow:0 0 20px hsl(var(--foreground)/30%);
+  box-shadow: 0 0 20px hsl(var(--foreground) / 20%);
 }
 
 .qr:hover {
-  transform: scale(1.7);
+  transform: scale(3);
   cursor: none;
   margin-top: 60px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(var(--date-icon-invert));
 }

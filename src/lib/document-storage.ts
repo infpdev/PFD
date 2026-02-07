@@ -4,6 +4,8 @@ import type {
   StoredDocument,
   DocumentFile,
 } from "@/types/epf-forms";
+import imageCompression from "browser-image-compression";
+
 
 const STORAGE_KEY_DOCS = "epf_documents";
 const DB_NAME = "epf_documents_db";
@@ -36,6 +38,20 @@ const fileToBase64 = (file: File): Promise<string> => {
     reader.onerror = (error) => reject(error);
   });
 };
+
+
+export async function maybeCompress(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) {
+    return file; // PDFs, etc.
+  }
+
+  return await imageCompression(file, {
+    maxSizeMB: 0.5,
+    maxWidthOrHeight: 1600,
+    useWebWorker: true,
+    initialQuality: 0.8,
+  });
+}
 
 // Convert base64 to File
 const base64ToFile = (base64: string, name: string, type: string): File => {

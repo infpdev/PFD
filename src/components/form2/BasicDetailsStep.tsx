@@ -26,6 +26,7 @@ interface BasicDetailsStepProps {
   errors: Record<string, string>;
   documents?: DocumentUploads;
   onPreviewDocument?: (type: "aadhaar" | "pan" | "passbook") => void;
+  readOnlyCommon?: boolean;
 }
 
 export const BasicDetailsStep: React.FC<BasicDetailsStepProps> = ({
@@ -35,6 +36,7 @@ export const BasicDetailsStep: React.FC<BasicDetailsStepProps> = ({
   errors,
   documents,
   onPreviewDocument,
+  readOnlyCommon = false,
 }) => {
 
   const handleChange = (field: string, value: string) => {
@@ -47,10 +49,16 @@ export const BasicDetailsStep: React.FC<BasicDetailsStepProps> = ({
   return (
     <FormSection
       title="Basic Information"
-      description="Employee details for nomination form"
+      description={readOnlyCommon ? "Common fields are auto-filled from Form 11" : "Employee details for nomination form"}
       icon={<User className="h-5 w-5" />}
     >
       <div className="space-y-5">
+        {readOnlyCommon && (
+          <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 border border-border">
+            Fields marked as disabled are auto-synced from Form 11
+          </div>
+        )}
+
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2">
             <FormField
@@ -62,6 +70,7 @@ export const BasicDetailsStep: React.FC<BasicDetailsStepProps> = ({
               required
               placeholder="FULL NAME AS PER AADHAAR"
               error={errors.form2_member_name}
+              disabled={readOnlyCommon}
             />
             {/* Document preview buttons */}
             {(documents?.aadhaar || documents?.pan || documents?.passbook) && (
@@ -117,6 +126,7 @@ export const BasicDetailsStep: React.FC<BasicDetailsStepProps> = ({
             required
             placeholder="Enter name"
             error={errors.form2_father_husband_name}
+            disabled={readOnlyCommon}
           />
         </div>
 
@@ -130,6 +140,7 @@ export const BasicDetailsStep: React.FC<BasicDetailsStepProps> = ({
             onChange={(v) => handleChange("date_of_birth", v)}
             required
             error={errors.form2_date_of_birth}
+            disabled={readOnlyCommon}
           />
 
           <FormField
@@ -163,35 +174,40 @@ export const BasicDetailsStep: React.FC<BasicDetailsStepProps> = ({
             placeholder="10-digit"
             maxLength={10}
             error={errors.form2_mobile_no}
+            disabled={readOnlyCommon}
           />
         </div>
 
-        <RadioGroup
-          label="Gender"
-          name="gender"
-          value={data.gender}
-          onChange={(v) => handleChange("gender", v)}
-          options={[
-            { label: "Male", value: "male" },
-            { label: "Female", value: "female" },
-            { label: "Transgender", value: "transgender" },
-          ]}
-          required
-        />
+        <div className={readOnlyCommon ? "pointer-events-none opacity-70" : ""}>
+          <RadioGroup
+            label="Gender"
+            name="gender"
+            value={data.gender}
+            onChange={(v) => handleChange("gender", v)}
+            options={[
+              { label: "Male", value: "male" },
+              { label: "Female", value: "female" },
+              { label: "Transgender", value: "transgender" },
+            ]}
+            required
+          />
+        </div>
 
-        <RadioGroup
-          label="Marital Status"
-          name="marital_status"
-          value={data.marital_status}
-          onChange={(v) => handleChange("marital_status", v)}
-          options={[
-            { label: "Unmarried", value: "unmarried" },
-            { label: "Married", value: "married" },
-            { label: "Widow", value: "widow" },
-            { label: "Divorced", value: "divorced" },
-          ]}
-          required
-        />
+        <div className={readOnlyCommon ? "pointer-events-none opacity-70" : ""}>
+          <RadioGroup
+            label="Marital Status"
+            name="marital_status"
+            value={data.marital_status}
+            onChange={(v) => handleChange("marital_status", v)}
+            options={[
+              { label: "Unmarried", value: "unmarried" },
+              { label: "Married", value: "married" },
+              { label: "Widow", value: "widow" },
+              { label: "Divorced", value: "divorced" },
+            ]}
+            required
+          />
+        </div>
 
         <div className="space-y-2">
           <Label className="text-sm font-medium text-form-label">

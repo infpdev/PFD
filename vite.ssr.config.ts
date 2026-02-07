@@ -8,16 +8,21 @@ export default defineConfig(({ mode }) => ({
   base: "/",
   build: {
     sourcemap: true, // should be true
-
-    outDir: "dist/client",
-    manifest: true,
+    ssr: "src/ssr/ssrEntries.tsx",
+    outDir: "dist/server",
     rollupOptions: {
-      input: {
-        main: resolve(__dirname, "index.html"),
-        pf: resolve(__dirname, "src/pf.client.tsx"),
-        admin: resolve(__dirname, "src/admin.client.tsx"),
-      },
+      // noExternal forces Vite to bundle and transform these deps
+      // so CSS imports are handled properly
+      external: [], // optional, you can keep it empty
     },
+  },
+  ssr: {
+    // these packages will be *inlined* and transformed for SSR
+    noExternal: [
+      "@mui/x-data-grid", // the grid package
+      "@mui/x-data-grid/**", // all internal modules
+      "react-helmet-async",
+    ],
   },
   server: {
     host: "::",

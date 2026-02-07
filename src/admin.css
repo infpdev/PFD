@@ -1,0 +1,158 @@
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap");
+
+html,
+body,
+#root,
+.app,
+.content {
+  height: 100%;
+  width: 100%;
+  font-family: "Source Sans Pro", sans-serif;
+}
+
+.app {
+  display: flex;
+  position: relative;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.74);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+/* Hover */
+::-webkit-scrollbar-track:hover {
+    background: #555;
+}
+
+
+.MuiDataGrid-root {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+
+.MuiDataGrid-cell {
+  border-color: hsl(var(--border)) !important;
+}
+
+.MuiDataGrid-columnHeaders {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+.MuiDataGrid-footerContainer {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border)) !important;
+}
+
+.MuiTablePagination-root {
+  color: hsl(var(--foreground)) !important;
+}
+
+.MuiTablePagination-selectIcon {
+  color: hsl(var(--foreground)) !important;
+}
+
+.MuiIconButton-root {
+  color: hsl(var(--foreground)) !important;
+}
+
+.MuiDataGrid-row:hover {
+  background-color: hsl(var(--muted) / 0.5) !important;
+}
+
+.MuiDataGrid-row.Mui-selected {
+  background-color: hsl(var(--primary) / 0.1) !important;
+}
+
+.MuiDataGrid-row.Mui-selected:hover {
+  background-color: hsl(var(--primary) / 0.15) !important;
+}
+
+.MuiCheckbox-root {
+  color: hsl(var(--foreground) / 0.7) !important;
+}
+
+.MuiCheckbox-root.Mui-checked {
+  color: hsl(var(--primary)) !important;
+}
+
+.MuiDataGrid-columnSeparator {
+  color: hsl(var(--border)) !important;
+}
+
+.MuiDataGrid-menuIcon {
+  color: hsl(var(--foreground)) !important;
+}
+
+.MuiDataGrid-sortIcon {
+  color: hsl(var(--foreground)) !important;
+}
+
+.MuiDataGrid-menuList {
+  color: hsl(var(--foreground));
+}
+
+.MuiDataGrid-menuList .MuiListItemIcon-root {
+  color: inherit;
+}
+
+.MuiDataGrid-panel {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.MuiDataGrid-panelHeader {
+  background-color: hsl(var(--muted)) !important;
+}
+
+.MuiDataGrid-panelFooter {
+  background-color: hsl(var(--muted)) !important;
+}
+
+.MuiDataGrid-filterForm {
+  background-color: hsl(var(--card)) !important;
+}
+
+.MuiInputBase-root {
+  color: hsl(var(--foreground)) !important;
+}
+
+.MuiInputLabel-root {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.MuiOutlinedInput-notchedOutline {
+  border-color: hsl(var(--border)) !important;
+}
+
+.MuiSelect-icon {
+  color: hsl(var(--foreground)) !important;
+}
+
+.MuiMenuItem-root {
+  color: hsl(var(--foreground)) !important;
+}
+
+.MuiMenuItem-root:hover {
+  background-color: hsl(var(--muted)) !important;
+}
+
+.MuiPaper-root {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible) {
+  outline: none;
+}

@@ -1,10 +1,8 @@
 import React from "react";
 import { FormField } from "@/components/FormField";
 import { FormSection } from "@/components/FormSection";
-import { SignatureCanvas } from "@/components/SignatureCanvas";
 import { FileCheck } from "lucide-react";
 import type { DeclarationDetails } from "@/types/epf-forms";
-import { Label } from "@/components/ui/label";
 
 interface Form2DeclarationStepProps {
   data: DeclarationDetails;
@@ -26,8 +24,8 @@ export const Form2DeclarationStep: React.FC<Form2DeclarationStepProps> = ({
 
   return (
     <FormSection
-      title="Declaration & Signature"
-      description="Confirm your nomination and provide signature"
+      title="Declaration"
+      description="Confirm your nomination"
       icon={<FileCheck className="h-5 w-5" />}
     >
       <div className="space-y-6">
@@ -59,21 +57,6 @@ export const Form2DeclarationStep: React.FC<Form2DeclarationStepProps> = ({
             required
             error={errors.form2_date}
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-form-label">
-            Signature / Thumb Impression of the Subscriber
-            <span className="text-destructive ml-1">*</span>
-          </Label>
-          <SignatureCanvas
-            onSignatureChange={(sig) => handleChange("signature_data", sig)}
-            initialSignature={data.signature_data?.image}
-            initialBbox={data.signature_data?.bbox}
-          />
-          {errors.form2_signature && (
-            <p className="text-xs text-destructive">{errors.form2_signature}</p>
-          )}
         </div>
       </div>
     </FormSection>

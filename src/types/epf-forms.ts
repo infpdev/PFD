@@ -51,7 +51,6 @@ export interface SignatureData {
   bbox: SignatureBBox;
 }
 
-
 export interface DeclarationDetails {
   place: string;
   date: string;
@@ -193,4 +192,38 @@ export interface Payload {
   documents?: StoredDocumentUploads;
   meta: Meta;
   password?: string;
+}
+
+export type InitPayload = {
+  forms: Forms;
+  documents: {
+    aadhaar: StoredDocument;
+    pan: StoredDocument;
+    passbook: StoredDocument;
+  };
+};
+
+export type IndexDocumentsPayload = {
+  aadhaar: StoredDocument;
+  pan: StoredDocument;
+  passbook: StoredDocument;
+};
+
+// Admin search result types
+export interface SearchResult {
+  id: number;
+  name: string;
+  uan: string;
+  dos: string;
+  eno: string;
+}
+
+// Full submission data (returned from API)
+export interface SubmissionData {
+  id: number;
+  uan: string;
+  forms: Forms;
+  documents?: StoredDocumentUploads;
+  submissionDate: string;
+  status?: "pending" | "approved" | "rejected";
 }

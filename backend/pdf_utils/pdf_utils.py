@@ -3,8 +3,11 @@ from datetime import date, datetime
 import io
 # import json
 # import os
+import os
+import tempfile
 import textwrap
 from typing import Any, Optional
+import uuid
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from pypdf import PdfReader, PdfWriter, Transformation
@@ -658,72 +661,78 @@ def readDefaults():
 
 defaultValuesFromConfig = readDefaults()
 
-def generate_merged_forms(output_path: str, data: FormsPayload, docs: StoredDocumentUploads):
+def generate_merged_forms(data: FormsPayload, docs: StoredDocumentUploads) -> bytes:
+    request_id = uuid.uuid4().hex
+    tmp_dir = tempfile.gettempdir()
     
-
-    c = canvas.Canvas(OVERLAY_PATH, pagesize=A4)
-    c.setFont("Helvetica", 10)
-    
-    c.setTitle("PF")
-
-    form_11(c, data.form_11, extra={"eno":data.form_2.employee_no})
-    
-    c.showPage()
-    form_2(c, data.form_2, sigData=data.form_2.declaration.signature_data if not data.form_2.declaration.same_signature else data.form_11.declaration.signature_data)
-
-    c.save()
-
-    # forms_pdf = PdfReader(OVERLAY_PATH)
-    c.acroForm.needAppearances = True
-
-    writer = PdfWriter()
-
-    template_pdf = PdfReader(TEMPLATE_PATH)
-    overlay_pdf = PdfReader(OVERLAY_PATH)
-
-    template_pages = len(template_pdf.pages)
-
-    for i, overlay_page in enumerate(overlay_pdf.pages):
-        if i < template_pages:
-            base = template_pdf.pages[i]
-            base.merge_page(overlay_page)
-            writer.add_page(base)
-        else:
-            # pages beyond template (attachments)
-            writer.add_page(overlay_page)
-
-    sig_data=data.form_2.declaration.signature_data if not data.form_2.declaration.same_signature else data.form_11.declaration.signature_data
+    data = FormsPayload.model_validate(data)
+    docs = StoredDocumentUploads.model_validate(docs)
 
 
-    for _, stored_doc in docs:
+    overlay_path = os.path.join(tmp_dir, f"overlay_{request_id}.pdf")
+    attachment_path = os.path.join(tmp_dir, f"attach_{request_id}.pdf")
+    output_path = os.path.join(tmp_dir, f"final_{request_id}.pdf")
 
-        # ---- PDF attachment ----
-        if stored_doc.type == "application/pdf":
-            append_pdf_attachment(
-                writer,
-                decode_base64(stored_doc.base64),
-                sig_data
-            )
-            continue
+    try:
+        # -------- Create overlay PDF --------
+        overlay_canvas = canvas.Canvas(overlay_path, pagesize=A4)
+        overlay_canvas.setFont("Helvetica", 10)
+        overlay_canvas.setTitle("PF")
 
-        # ---- IMAGE attachment ----
-        c = canvas.Canvas(OVERLAY_PATH, pagesize=A4)
-        draw_attachment_page(c, stored_doc, sig_data)
-        draw_signature(c, sig_data, x=A4[0]/2, y=20)
+        form_11(overlay_canvas, data.form_11, extra={"eno": data.form_2.employee_no})
+        overlay_canvas.showPage()
 
-        c.save()
+        sig_data = (
+            data.form_2.declaration.signature_data
+            if not data.form_2.declaration.same_signature
+            else data.form_11.declaration.signature_data
+        )
 
-        img_pdf = PdfReader(OVERLAY_PATH)
-        writer.add_page(img_pdf.pages[-1])
+        form_2(overlay_canvas, data.form_2, sigData=sig_data)
+        overlay_canvas.save()
 
+        # -------- Merge with template --------
+        writer = PdfWriter()
+        template_pdf = PdfReader(TEMPLATE_PATH)
+        overlay_pdf = PdfReader(overlay_path)
 
+        for i, overlay_page in enumerate(overlay_pdf.pages):
+            if i < len(template_pdf.pages):
+                base = template_pdf.pages[i]
+                base.merge_page(overlay_page)
+                writer.add_page(base)
+            else:
+                writer.add_page(overlay_page)
 
+        # -------- Attach documents --------
+        for _, stored_doc in docs:
+            if stored_doc.type == "application/pdf":
+                append_pdf_attachment(
+                    writer,
+                    decode_base64(stored_doc.base64),
+                    sig_data
+                )
+            else:
+                attach_canvas = canvas.Canvas(attachment_path, pagesize=A4)
+                draw_attachment_page(attach_canvas, stored_doc, sig_data)
+                draw_signature(attach_canvas, sig_data, x=A4[0]/2, y=20)
+                attach_canvas.save()
 
-    with open(output_path, "wb") as f:
-        writer.write(f)
+                img_pdf = PdfReader(attachment_path)
+                writer.add_page(img_pdf.pages[-1])
 
+        # -------- Write final PDF --------
+        with open(output_path, "wb") as f:
+            writer.write(f)
 
-    # print("✅ PDF Generated: ", output_path)
+        with open(output_path, "rb") as f:
+            return f.read()
+
+    finally:
+        for path in (overlay_path, attachment_path, output_path):
+            if path and os.path.exists(path):
+                os.remove(path)
+
 
 
 def draw_signature(c, sig_data, x, y, width=106, height=40):

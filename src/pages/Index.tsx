@@ -14,37 +14,56 @@ import { Form2DeclarationStep } from "@/components/form2/Form2DeclarationStep";
 import { DocumentUploadStep } from "@/components/form2/DocumentUploadStep";
 import { FormSummary } from "@/components/FormSummary";
 import { DUMMY_PAYLOAD } from "@/components/dummyPayload";
-import type { DocumentFile } from "@/types/epf-forms";
-
-import {
-  FileText,
-  Users,
-  Building2,
-  Shield,
-  Download,
-  RotateCcw,
-  X,
-  Upload,
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import type {
+  DocumentFile,
+  Forms,
+  InitPayload,
+  StoredDocument,
+  StoredDocumentUploads,
+  IndexDocumentsPayload,
+  SignatureData,
   Form11Data,
   Form2Data,
   EPFNominee,
   EPSFamilyMember,
   DocumentUploads,
 } from "@/types/epf-forms";
+
+import {
+  FileText,
+  Users,
+  Shield,
+  Download,
+  RotateCcw,
+  X,
+  ArrowLeft,
+  Pen,
+  TriangleAlert,
+  Zap,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   saveDocumentsToStorage,
   loadDocumentsFromStorage,
   clearDocumentsFromStorage,
   storedToDocumentFile,
 } from "@/lib/document-storage";
-import { useLocation } from "react-router-dom";
 import NotFound from "./NotFound";
+import { SignatureCanvas } from "@/components/SignatureCanvas";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
 
 const STORAGE_KEY_FORM11 = "epf_form11_data";
 const STORAGE_KEY_FORM2 = "epf_form2_data";
+const STORAGE_KEY_SIGNATURE = "epf_signature_data";
 
 // Helper to validate bbox - all values must be finite numbers (x/y can be 0)
 const isValidBbox = (
@@ -191,7 +210,14 @@ const loadFromStorage = <T,>(key: string, fallback: T): T => {
   return fallback;
 };
 
-const Index: React.FC = () => {
+type IndexProps = {
+  forms?: Forms;
+  docs?: IndexDocumentsPayload;
+  isEditing?: number | undefined;
+  setEditing?: React.Dispatch<React.SetStateAction<number>>;
+};
+
+const Index = ({ forms, docs, isEditing, setEditing }: IndexProps) => {
   const [form11Data, setForm11Data] = useState<Form11Data>(() =>
     loadFromStorage(STORAGE_KEY_FORM11, initialForm11Data),
   );
@@ -203,23 +229,40 @@ const Index: React.FC = () => {
   const [errors11, setErrors11] = useState<Record<string, string>>({});
   const [errors2, setErrors2] = useState<Record<string, string>>({});
   const [showSummary, setShowSummary] = useState(false);
-  const [showEditJson, setShowEditJson] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [signatureData, setSignatureData] = useState<SignatureData | null>(
+    () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY_SIGNATURE);
+        if (stored) return JSON.parse(stored);
+        const form11Stored = localStorage.getItem(STORAGE_KEY_FORM11);
+        if (form11Stored) {
+          const parsed = JSON.parse(form11Stored);
+          if (parsed.declaration?.signature_data)
+            return parsed.declaration.signature_data;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      return null;
+    },
+  );
+  const [showEditWarning, setShowEditWarning] = useState(false);
+  const [noTokenWarning, setNoTokenWarning] = useState(false);
+  const [showDemoWarning, setShowDemoWarning] = useState(false);
 
   // ==================== Handle preview ===============================
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewType, setPreviewType] = useState<string | null>(null);
   const [pageNotFound, setPageNotFound] = useState(false);
+  const [intakeToken, setIntakeToken] = useState<string | null>(null);
 
   // ================= Handle routing =================================
-  const { pathname } = useLocation();
-  const allowedPaths = ["/"];
-  if (!allowedPaths.some((p) => pathname.startsWith(p))) {
-    setPageNotFound(true);
-  }
+  // const { pathname } = useLocation();
+  // const allowedPaths = ["/",];
+  // if (!allowedPaths.some((p) => pathname.startsWith(p))) {
+  //   setPageNotFound(true);
+  // }
 
   const handlePreview = (type: "aadhaar" | "pan" | "passbook") => {
     const doc = documents?.[type];
@@ -238,20 +281,21 @@ const Index: React.FC = () => {
     new URLSearchParams(window.location.search).has("dummy"),
   );
 
-  useEffect(() => {
-    async function isAdmin() {
-      const res = await fetch("/isAdmin", {
-        credentials: "include",
-      });
+  // useEffect(() => {
+  //   async function isAdmin() {
+  //     const res = await fetch("/isAdmin", {
+  //       credentials: "include",
+  //     });
 
-      if (!res.ok) throw new Error("Unable to access backend");
-      const data = await res.json();
+  //     if (!res.ok) throw new Error("Unable to access backend");
+  //     const data = await res.json();
 
-      setShowEditJson(false);
-      if (data.isAdmin) setShowEditJson(true);
-    }
-    isAdmin();
-  }, []);
+  //     setShowEditJson(false);
+  //     if (data.isAdmin) setShowEditJson(true);
+  //   }
+  //   isAdmin();
+  // }, []);
+
   const { toast } = useToast();
 
   const form11Ref = React.useRef<HTMLDivElement | null>(null);
@@ -265,7 +309,8 @@ const Index: React.FC = () => {
       setDocuments(loadedDocs);
       setDocumentsLoaded(true);
     };
-    if (!isDemo) loadDocs();
+    // console.log(intakeToken, isEditing);
+    if (!isDemo && !isEditing) loadDocs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -298,12 +343,83 @@ const Index: React.FC = () => {
     loadDocs();
   }, [documents, documentsLoaded]);
 
-  // Clear saved data after submit (commented out for now)
-  // const clearSavedData = () => {
-  //   localStorage.removeItem(STORAGE_KEY_FORM11);
-  //   localStorage.removeItem(STORAGE_KEY_FORM2);
-  //   clearDocumentsFromStorage();
-  // };
+  // Auto-save signature
+  useEffect(() => {
+    try {
+      if (signatureData) {
+        localStorage.setItem(
+          STORAGE_KEY_SIGNATURE,
+          JSON.stringify(signatureData),
+        );
+      } else {
+        localStorage.removeItem(STORAGE_KEY_SIGNATURE);
+      }
+    } catch (e) {
+      console.error("Error saving signature to localStorage:", e);
+    }
+  }, [signatureData]);
+
+  // Auto-sync common fields from Form 11 to Form 2
+  useEffect(() => {
+    setForm2Data((prev) => ({
+      ...prev,
+      member_name: form11Data.personal_details.member_name,
+      father_husband_name: form11Data.personal_details.parent_spouse_name,
+      date_of_birth: form11Data.personal_details.date_of_birth,
+      gender: form11Data.personal_details.gender,
+      mobile_no: form11Data.contact_details.mobile_no,
+    }));
+  }, [
+    form11Data.personal_details.member_name,
+    form11Data.personal_details.parent_spouse_name,
+    form11Data.personal_details.date_of_birth,
+    form11Data.personal_details.gender,
+    form11Data.contact_details.mobile_no,
+  ]);
+
+  // Auto-sync marital status with EPS family member logic
+  useEffect(() => {
+    const status = form11Data.personal_details.marital_status;
+    setForm2Data((prev) => {
+      if (prev.marital_status === status) return prev;
+      const updated = { ...prev, marital_status: status };
+      if (status === "unmarried" || status === "divorced") {
+        updated.eps_family_members = [];
+        updated.has_no_family_eps = false;
+      } else if (
+        (status === "married" || status === "widow") &&
+        !prev.eps_family_members?.length
+      ) {
+        updated.eps_family_members = [createEmptyFamilyMember()];
+      }
+      return updated;
+    });
+  }, [form11Data.personal_details.marital_status]);
+
+  // Show admin edit warning on page load when editing
+  useEffect(() => {
+    if (isEditing) {
+      setShowEditWarning(true);
+    } else {
+      const url = new URL(window.location.href);
+      const token = url.searchParams.get("token");
+
+      if (token) {
+        setIntakeToken(token);
+        setShowDemoWarning(true);
+
+        url.searchParams.delete("token");
+        window.history.replaceState(
+          {},
+          document.title,
+          url.pathname + url.search,
+        );
+      } else {
+        if (!intakeToken) setNoTokenWarning(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing]);
 
   const validateForm11 = (): Record<string, string> => {
     const newErrors: Record<string, string> = {};
@@ -336,10 +452,10 @@ const Index: React.FC = () => {
         newErrors.uan = "UAN is required";
       if (!/^[0-9]{12}$/.test(form11Data.previous_employment?.uan))
         newErrors.uan = "UAN must be a 12-digit number";
-      if (!form11Data.previous_employment?.previous_pf_account_no)
-        newErrors.previous_pf_account_no = "Previous PF Account No is required";
-      if (!form11Data.previous_employment?.exit_date)
-        newErrors.exit_date = "Exit date is required";
+      // if (!form11Data.previous_employment?.previous_pf_account_no)
+      //   newErrors.previous_pf_account_no = "Previous PF Account No is required";
+      // if (!form11Data.previous_employment?.exit_date)
+      //   newErrors.exit_date = "Exit date is required";
     } else {
       if (!/^[0-9]{12}$/.test(form11Data.previous_employment?.uan))
         newErrors.uan = "UAN must be a 12-digit number";
@@ -369,6 +485,7 @@ const Index: React.FC = () => {
       newErrors.ifsc_code = "IFSC code is required";
     else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(form11Data.kyc_details.ifsc_code)) {
       newErrors.ifsc_code = "Invalid IFSC format";
+      if (!form11Data.kyc_details.pan_no) newErrors.doc_pan = "PAN card upload is required";
     }
     if (!form11Data.kyc_details.aadhaar_no)
       newErrors.aadhaar_no = "Aadhaar is required";
@@ -379,28 +496,12 @@ const Index: React.FC = () => {
     // Declaration
     if (!form11Data.declaration.place) newErrors.place = "Place is required";
     if (!form11Data.declaration.date) newErrors.date = "Date is required";
-    if (!form11Data.declaration.signature_data) {
+    if (!signatureData) {
       newErrors.signature_data = "Signature is required";
-    } else if (!isValidBbox(form11Data.declaration.signature_data.bbox)) {
-      // bbox is invalid or missing - signature needs to be re-drawn
+    } else if (!isValidBbox(signatureData.bbox)) {
       newErrors.signature_data =
         "Please re-sign - signature data is incomplete";
-      setForm11Data({
-        ...form11Data,
-        declaration: {
-          ...form11Data.declaration,
-          signature_data: null,
-        },
-      });
-
-      setForm2Data({
-        ...form2Data,
-        declaration: {
-          ...form2Data.declaration,
-          signature_data: null,
-          same_signature: false,
-        },
-      });
+      setSignatureData(null);
     }
     setErrors11(newErrors);
     return newErrors;
@@ -569,227 +670,96 @@ const Index: React.FC = () => {
     setForm2Data(initialForm2Data);
     setDocuments({});
     clearDocumentsFromStorage();
+    setSignatureData(null);
     setErrors11({});
     setErrors2({});
     setShowSummary(false);
   };
+
   const handleEdit = (form: "form11" | "form2") => {
     setShowSummary(false);
-
     setTimeout(() => {
-      // requestAnimationFrame(() => {
       const ref = form == "form11" ? form11Ref : form2Ref;
       ref.current?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
-      // ref.current?.focus?.();
-      // });
     }, 500);
+  };
 
-    if (form2Data.declaration.same_signature) {
-      setForm2Data((prev) => ({
-        ...prev,
-        declaration: {
-          ...form11Data.declaration,
-          signature_data: { ...form11Data.declaration.signature_data },
-          same_signature: true,
-        },
-      }));
+  function initializeFromPayload(
+    payload: InitPayload,
+    opts: {
+      setForm11Data: React.Dispatch<React.SetStateAction<Form11Data>>;
+      setForm2Data: React.Dispatch<React.SetStateAction<Form2Data>>;
+      setDocuments: React.Dispatch<
+        React.SetStateAction<{
+          aadhaar: DocumentFile;
+          pan: DocumentFile;
+          passbook: DocumentFile;
+        }>
+      >;
+      setSignatureData?: React.Dispatch<
+        React.SetStateAction<SignatureData | null>
+      >;
+      onDone?: () => void;
+    },
+  ) {
+    const aadhaar = storedToDocumentFile(payload.documents.aadhaar);
+    const pan = storedToDocumentFile(payload.documents.pan);
+    const passbook = storedToDocumentFile(payload.documents.passbook);
+
+    const form11 = payload.forms.form_11;
+    // Extract signature from form 11 declaration
+    if (form11.declaration.signature_data) {
+      opts.setSignatureData?.(form11.declaration.signature_data);
     }
-  };
 
-  // Auto-sync some fields from Form 11 to Form 2
-  const syncToForm2 = () => {
-    setForm2Data((prev) => ({
-      ...prev,
-      member_name: form11Data.personal_details.member_name,
-      father_husband_name: form11Data.personal_details.parent_spouse_name,
-      date_of_birth: form11Data.personal_details.date_of_birth,
-      gender: form11Data.personal_details.gender,
-      marital_status: form11Data.personal_details.marital_status,
-      mobile_no: form11Data.contact_details.mobile_no,
-      pf_account_no: form11Data.previous_employment.previous_pf_account_no,
-      declaration: {
-        ...prev.declaration,
-        signature_data: { ...form11Data.declaration.signature_data },
-        same_signature: true,
-      },
-    }));
-  };
-
-  // Load existing JSON data for correction (admin only)
-  const handleLoadExistingJson = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const jsonData = JSON.parse(e.target?.result as string);
-        // Validate JSON structure
-        if (!jsonData.forms?.form_11 || !jsonData.forms?.form_2) {
-          toast({
-            title: "Invalid JSON format",
-            description:
-              "The selected file does not contain valid EPF form data.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Hydrate Form 11 data
-        setForm11Data(jsonData.forms.form_11);
-
-        // Hydrate Form 2 data with normalization for other_relationship
-        const form2 = jsonData.forms.form_2;
-
-        // Normalize EPF nominees
-        if (form2.epf_nominees) {
-          form2.epf_nominees = form2.epf_nominees.map(
-            (nominee: EPFNominee) => ({
-              ...nominee,
-              other_relationship: nominee.other_relationship || "",
-            }),
-          );
-        }
-
-        // Normalize EPS family members
-        if (form2.eps_family_members) {
-          form2.eps_family_members = form2.eps_family_members.map(
-            (member: EPSFamilyMember) => ({
-              ...member,
-              other_relationship: member.other_relationship || "",
-            }),
-          );
-        }
-
-        // Normalize pension nominee
-        if (form2.pension_nominee && !Array.isArray(form2.pension_nominee)) {
-          form2.pension_nominee = {
-            ...form2.pension_nominee,
-            other_relationship: form2.pension_nominee.other_relationship || "",
-          };
-        }
-
-        if (form2.declaration.same_signature) {
-          form2.declaration.signature_data = {
-            ...jsonData.forms.form_11.declaration.signature_data,
-            same_signature: true,
-          };
-        }
-
-        setForm2Data(form2);
-
-        // Handle documents if present
-        if (jsonData.documents) {
-          const loadedDocs: DocumentUploads = {};
-
-          if (jsonData.documents.aadhaar) {
-            loadedDocs.aadhaar = storedToDocumentFile(
-              jsonData.documents.aadhaar,
-            );
-          }
-          if (jsonData.documents.pan) {
-            loadedDocs.pan = storedToDocumentFile(jsonData.documents.pan);
-          }
-          if (jsonData.documents.passbook) {
-            loadedDocs.passbook = storedToDocumentFile(
-              jsonData.documents.passbook,
-            );
-          }
-
-          setDocuments(loadedDocs);
-
-          async function saveDocs() {
-            if (documentsLoaded) {
-              await saveDocumentsToStorage(loadedDocs);
-            }
-          }
-
-          saveDocs();
-          // saveDocumentsToStorage(loadedDocs);
-        }
-
-        // Mark as edit mode
-        setIsEditMode(true);
-
-        toast({
-          title: "Data loaded successfully",
-          description:
-            "You can now edit the form and submit to overwrite the existing records.",
-        });
-
-        // Reset file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      } catch (err) {
-        console.error("Error parsing JSON:", err);
-        toast({
-          title: "Error loading file",
-          description:
-            "Failed to parse the JSON file. Please ensure it's a valid EPF data file.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    reader.onerror = () => {
-      toast({
-        title: "Error reading file",
-        description: "Failed to read the selected file.",
-        variant: "destructive",
-      });
-    };
-
-    reader.readAsText(file);
-  };
+    opts.setForm11Data(form11);
+    opts.setForm2Data(payload.forms.form_2);
+    opts.setDocuments({
+      aadhaar,
+      pan,
+      passbook,
+    });
+    saveDocumentsToStorage({ aadhaar, pan, passbook }).then(() => {
+      opts.onDone?.();
+    });
+  }
 
   // Dummy documents
-
   useEffect(() => {
-    if (isDemo) {
-      const cleanUrl = window.location.pathname;
-      window.history.replaceState({}, "", cleanUrl);
+    if (!isDemo) return;
 
-      const aadhaar: DocumentFile = storedToDocumentFile(
-        DUMMY_PAYLOAD.documents.aadhaar,
-      );
-      const pan: DocumentFile = storedToDocumentFile(
-        DUMMY_PAYLOAD.documents.pan,
-      );
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, "", cleanUrl);
 
-      const passbook: DocumentFile = storedToDocumentFile(
-        DUMMY_PAYLOAD.documents.passbook,
-      );
+    initializeFromPayload(DUMMY_PAYLOAD, {
+      setForm11Data,
+      setForm2Data,
+      setDocuments,
+      setSignatureData,
+      onDone: () => setIsDemo(false),
+    });
+  }, [isDemo]);
 
-      setForm11Data(DUMMY_PAYLOAD.forms.form_11);
-      setForm2Data({
-        ...DUMMY_PAYLOAD.forms.form_2,
-        declaration: {
-          ...form11Data.declaration,
-          signature_data: { ...form11Data.declaration.signature_data },
-          same_signature: true,
-        },
-      });
-      setDocuments({
-        aadhaar,
-        pan,
-        passbook,
-      });
+  // To set documents when admin edits a user.
+  useEffect(() => {
+    if (!forms || !docs) return;
 
-      saveDocumentsToStorage({
-        aadhaar,
-        pan,
-        passbook,
-      }).then(() => {
-        setIsDemo(false);
-      });
-    }
-  }, [isDemo, form11Data]);
+    initializeFromPayload(
+      {
+        forms,
+        documents: { ...docs },
+      },
+      {
+        setForm11Data,
+        setForm2Data,
+        setDocuments,
+        setSignatureData,
+      },
+    );
+  }, [forms, docs]);
 
   if (pageNotFound) return <NotFound />;
 
@@ -797,31 +767,27 @@ const Index: React.FC = () => {
     return (
       <>
         <Helmet>
-          <title>EPF • Summary</title>
+          <title>{isEditing ? "EPF • Admin • Summary" : "EPF • Summary"}</title>
+
           <meta
             name="description"
-            content="Review your completed EPF Form 11 and Form 2 data before export."
+            content="Edit existing data and submit as a new submission without overwriting previous entry."
           />
         </Helmet>
-        <div className="min-h-screen bg-background">
-          <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-            <div className="container max-w-5xl mx-auto px-4 py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary text-primary-foreground">
-                  <Building2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold text-foreground font-serif">
-                    Employees' Provident Fund
-                  </h1>
-                  <p className="text-xs text-muted-foreground">
-                    Digital Form System
-                  </p>
-                </div>
-              </div>
-            </div>
-          </header>
-          <main className="container max-w-5xl mx-auto px-4 py-8">
+        {isEditing && (
+          <Button
+            title="Discard edits and go back"
+            variant="formOutline"
+            onClick={() => {
+              setEditing(undefined);
+            }}
+            className="rounded-full absolute overflow-visible m-[18px]"
+          >
+            <ArrowLeft className=" rounded-full w-6 h-6" />
+          </Button>
+        )}
+        <div className={`min-h-full bg-background items-center flex`}>
+          <main className="container max-w-5xl mx-auto px-4">
             <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden p-6 md:p-10">
               <FormSummary
                 form11Data={form11Data}
@@ -829,7 +795,10 @@ const Index: React.FC = () => {
                 documents={documents}
                 onEdit={handleEdit}
                 onReset={handleReset}
-                isEditMode={isEditMode}
+                signatureData={signatureData}
+                token={intakeToken}
+                isEditing={isEditing}
+                setIsEditing={setEditing}
               />
             </div>
           </main>
@@ -841,7 +810,10 @@ const Index: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>EPF • Form 11 & Form 2 Online</title>
+        <title>
+          {isEditing ? "EPF • Admin • New submission" : "EPF • New submission"}
+        </title>
+
         <meta
           name="description"
           content="Digital EPF Form 11 Declaration and Form 2 Nomination forms for employee provident fund. Easy online form filling with PDF and Excel export."
@@ -853,123 +825,73 @@ const Index: React.FC = () => {
       </Helmet>
 
       <div className="min-h-screen bg-background">
-        {/* Header */}
-        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container max-w-5xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary text-primary-foreground">
-                  <Building2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold text-foreground font-serif">
-                    Employees' Provident Fund
-                  </h1>
-                  <p className="text-xs text-muted-foreground">
-                    Digital Form System
-                  </p>
-                </div>
-              </div>
-              <Button variant="formOutline" size="sm" onClick={handleReset}>
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Reset
-              </Button>
-            </div>
-          </div>
-        </header>
-
+        {isEditing && (
+          <Button
+            title="Discard edits and go back"
+            variant="formOutline"
+            onClick={() => {
+              setEditing(undefined);
+            }}
+            className="rounded-full absolute overflow-visible m-[18px]"
+          >
+            <ArrowLeft className=" rounded-full w-6 h-6" />
+          </Button>
+        )}
         <main className="container max-w-5xl mx-auto px-4 py-8">
           {/* Hero Section */}
-          <section className="text-center mb-10 animate-slide-up">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground font-serif mb-3">
-              EPF Digital Form Entry
-            </h2>
+          {/* <section className="text-center mb-8 animate-slide-up">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground font-serif mb-3">
+                EPF Digital Form Entry
+              </h2>
 
-            {/* Features */}
-            <div className="flex flex-row justify-center w-auto gap-4 mt-8">
-              {[
-                { icon: FileText, label: "Form 11 & 2" },
-                { icon: Shield, label: "Secure Input" },
-                { icon: Users, label: "Nominations" },
-                // { icon: Building2, label: 'Excel Export' },
-              ].map(({ icon: Icon, label }) => (
-                <div
-                  key={label}
-                  className="flex w-full flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border"
-                >
-                  <Icon className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium text-foreground">
-                    {label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Admin-only Load Existing Data Section */}
-          {showEditJson && (
-            <section className="mb-8 animate-fade-in">
-              <div className="p-4 rounded-xl bg-card border border-amber-500/30 shadow-sm">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Upload className="h-4 w-4 text-amber-500" />
-                      <span className="font-medium text-foreground">
-                        Admin: Load Existing Data for Correction
-                      </span>
-                      {isEditMode && (
-                        <span className="text-xs bg-amber-500/20 text-amber-600 px-2 py-0.5 rounded-full">
-                          Edit Mode Active
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Click to edit the details of an existing user. Select the
-                      .json file of the corresponding user to continue.
-                    </p>
+              <div className="flex flex-row justify-center w-auto gap-4 mt-8">
+                {[
+                  { icon: FileText, label: "Form 11 & 2" },
+                  { icon: Shield, label: "Secure Input" },
+                  { icon: Users, label: "Nominations" },
+                  // { icon: Building2, label: 'Excel Export' },
+                ].map(({ icon: Icon, label }) => (
+                  <div
+                    key={label}
+                    className="flex w-full flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border"
+                  >
+                    <Icon className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      {label}
+                    </span>
                   </div>
-                  <div className="flex gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".json"
-                      onChange={handleLoadExistingJson}
-                      className="hidden"
-                      id="load-json-input"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
-                    >
-                      <Upload className="h-4 w-4 mr-1" />
-                      Load JSON
-                    </Button>
-                    {isEditMode && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setIsEditMode(false);
-                          toast({
-                            title: "Edit mode disabled",
-                            description:
-                              "Form will now submit as a new record.",
-                          });
-                        }}
-                        className="text-muted-foreground"
-                      >
-                        Cancel Edit
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                ))}
               </div>
-            </section>
-          )}
+            </section> */}
 
           {/* FORM 11 Section */}
+          <div className="flex items-center gap-3 mb-8">
+            <Button
+              variant="formOutline"
+              title="Discard saved details"
+              size="sm"
+              onClick={handleReset}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset
+            </Button>
+            {!isEditing && intakeToken && (
+              <Button
+                variant="outline"
+                size="sm"
+                title="Load dummy data to try out the form"
+                onClick={() => setIsDemo(true)}
+              >
+                <Zap className="h-4 w-4" />
+                Try with Dummy Data
+              </Button>
+            )}
+          </div>
+
+          {/* <div className="flex items-center gap-5 my-8">
+            
+          </div> */}
+
           <div
             ref={form11Ref}
             tabIndex={-1}
@@ -1047,14 +969,6 @@ const Index: React.FC = () => {
             </div>
           </div>
 
-          {/* Sync Button */}
-          <div className="flex justify-center mb-8">
-            <Button variant="formOutline" onClick={syncToForm2}>
-              <Download className="h-4 w-4 mr-2" />
-              Copy Form 11 details to Form 2
-            </Button>
-          </div>
-
           {/* FORM 2 Section */}
           <div
             ref={form2Ref}
@@ -1089,29 +1003,10 @@ const Index: React.FC = () => {
                   permanent_address: form2Data.permanent_address,
                 }}
                 onChange={(data) => setForm2Data({ ...form2Data, ...data })}
-                onMaritalStatusChange={(status) => {
-                  // Clear EPS family details if marital status is single/divorced
-                  if (status === "unmarried" || status === "divorced") {
-                    setForm2Data((prev) => ({
-                      ...prev,
-                      marital_status: status,
-                      eps_family_members: [],
-                      has_no_family_eps: false,
-                    }));
-                  } else if (status === "married" || status === "widow") {
-                    // Initialize with one default family member if empty
-                    setForm2Data((prev) => ({
-                      ...prev,
-                      marital_status: status,
-                      eps_family_members: prev.eps_family_members?.length
-                        ? prev.eps_family_members
-                        : [createEmptyFamilyMember()],
-                    }));
-                  }
-                }}
                 errors={errors2}
                 documents={documents}
                 onPreviewDocument={handlePreview}
+                readOnlyCommon
               />
 
               <EPFNomineeStep
@@ -1173,11 +1068,45 @@ const Index: React.FC = () => {
             </div>
           </div>
 
+          {/* Standalone Signature Section */}
+          <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden mb-8">
+            <div className="bg-primary/10 border-b border-border px-6 py-4">
+              <div className="flex items-center gap-3">
+                <Pen className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-xl font-bold text-foreground font-serif">
+                    Signature
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your signature will be used for both Form 11 and Form 2
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 md:p-10">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">
+                  Signature of Member / Thumb Impression
+                  <span className="text-destructive ml-1">*</span>
+                </Label>
+                <SignatureCanvas
+                  onSignatureChange={setSignatureData}
+                  initialSignature={signatureData?.image}
+                />
+                {(errors11.signature_data || errors2.form2_signature) && (
+                  <p className="text-xs text-destructive">
+                    {errors11.signature_data || errors2.form2_signature}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Document Upload Section */}
           <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden mb-8">
-            <div className="bg-accent/10 border-b border-border px-6 py-4">
+            <div className="bg-secondary/10 border-b border-border px-6 py-4">
               <div className="flex items-center gap-3">
-                <FileText className="h-6 w-6 text-accent-foreground" />
+                <FileText className="h-6 w-6 text-foreground/50" />
                 <div>
                   <h3 className="text-xl font-bold text-foreground font-serif">
                     Document Upload
@@ -1204,7 +1133,9 @@ const Index: React.FC = () => {
               variant="form"
               size="lg"
               onClick={handleSubmit}
-              className="px-12"
+              title={!intakeToken && !isEditing ? "Invalid page" : ""}
+              disabled={!intakeToken && !isEditing}
+              className="px-12 disabled:!cursor-not-allowed disabled:pointer-events-auto"
             >
               <FileText className="h-5 w-5 mr-2" />
               Complete & Review Forms
@@ -1258,6 +1189,86 @@ const Index: React.FC = () => {
           )}
         </main>
       </div>
+
+      {/* Admin Edit Warning Dialog */}
+      <AlertDialog open={showEditWarning} onOpenChange={setShowEditWarning}>
+        <AlertDialogContent className="rounded-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <TriangleAlert /> Admin Edit Mode
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 ">
+                <p>
+                  You are editing with an existing employee&apos;s data. Please
+                  note:
+                </p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>
+                    This will create a <strong>new entry</strong> in the
+                    database
+                  </li>
+                  <li>The existing entry will NOT be modified</li>
+                  <li>
+                    To edit an existing entry, use the <strong>View</strong>{" "}
+                    button in the Submissions page
+                  </li>
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>I Understand</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={noTokenWarning} onOpenChange={setNoTokenWarning}>
+        <AlertDialogContent className="w-[calc(100%-2rem)] rounded-lg lg:w-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <TriangleAlert /> Invalid session
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-justify">
+                <p>
+                  This page is not valid. To gain access to the page, scan the
+                  QR provided by the <strong>admin</strong>{" "}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Demo Warning Dialog */}
+      <AlertDialog open={showDemoWarning} onOpenChange={setShowDemoWarning}>
+        <AlertDialogContent className="w-[calc(100%-2rem)] rounded-lg lg:w-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <TriangleAlert /> Demo Page
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-justify">
+                <p>
+                  This is a <strong>demo page</strong> for testing purposes
+                  only. Please{" "}
+                  <strong>do not enter real personal details</strong> such as
+                  your Aadhaar, PAN, bank account numbers, or any other
+                  sensitive information.
+                </p>
+                <p>
+                  You can use the <strong>"Try with Dummy Data"</strong> button
+                  to load sample data and explore the form.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>I Understand</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

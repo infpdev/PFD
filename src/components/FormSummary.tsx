@@ -2,14 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Edit, Send, Eye, X } from "lucide-react";
+import { CheckCircle2, Edit, Send, Eye, X, TriangleAlert } from "lucide-react";
 import type {
   Form11Data,
   Form2Data,
-  Forms,
   DocumentUploads,
   StoredDocumentUploads,
   StoredDocument,
+  SignatureData,
 } from "@/types/epf-forms";
 
 // Helper to convert DocumentFile to StoredDocument
@@ -59,14 +59,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 interface FormSummaryProps {
   form11Data?: Form11Data;
   form2Data?: Form2Data;
   documents?: DocumentUploads;
   onEdit: (form: "form11" | "form2") => void;
   onReset: () => void;
-  isEditMode?: boolean;
+  signatureData?: SignatureData | null;
+  token?: string | null;
+  isEditing: number;
+  setIsEditing: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export const FormSummary: React.FC<FormSummaryProps> = ({
@@ -75,10 +84,14 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
   documents,
   onEdit,
   onReset,
-  isEditMode = false,
+  signatureData,
+  token,
+  isEditing,
+  setIsEditing,
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewType, setPreviewType] = useState<string | null>(null);
+  const [showInvalidPage, setShowInvalidPage] = useState(false);
 
   const handlePreview = (type: "aadhaar" | "pan" | "passbook") => {
     const doc = documents?.[type];
@@ -95,7 +108,7 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
   const [apiHost, setApiHost] = useState("localhost");
   const [apiPort, setApiPort] = useState("8000");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
+
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -106,7 +119,7 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
   }, []);
 
   // const apiUrl = `http://${apiHost}:${apiPort}`;
-  const apiUrl = "";
+  const apiUrl = "http://localhost:3000";
 
   const processForms = async (submissionPassword: string) => {
     if (!form11Data || !form2Data) return;
@@ -129,8 +142,22 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
 
     const payload = {
       forms: {
-        form_11: form11Data,
-        form_2: form2Data,
+        form_11: {
+          ...form11Data,
+          declaration: {
+            ...form11Data.declaration,
+            signature_data: signatureData,
+          },
+        },
+        form_2: {
+          ...form2Data,
+          declaration: {
+            ...form2Data.declaration,
+            signature_data: signatureData
+              ? { image: "same", bbox: { ...signatureData.bbox } }
+              : null,
+          },
+        },
       },
       documents: storedDocuments,
       meta: {
@@ -140,28 +167,19 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
       password: submissionPassword,
     };
 
-    // Handle same signature optimization - only copy bbox if Form 11 has valid signature
-    if (
-      (payload.forms.form_11.declaration.signature_data?.image ===
-        payload.forms.form_2.declaration.signature_data?.image ||
-        payload.forms.form_2.declaration.same_signature) &&
-      payload.forms.form_11.declaration.signature_data?.bbox
-    ) {
-      payload.forms.form_2.declaration.signature_data!.image = "same";
-      payload.forms.form_2.declaration.signature_data!.bbox = {
-        ...payload.forms.form_11.declaration.signature_data.bbox,
-      };
-    }
-
     console.log(payload);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20_000); // 30 seconds
+    const timeout = setTimeout(() => controller.abort(), 20_000); // 20 seconds
 
     try {
       const res = await fetch(`${apiUrl}/api/forms/process`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        ...(isEditing && { credentials: "include" }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
@@ -173,7 +191,13 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.detail || "Failed to generate PDF");
+        // console.log(errorData);
+        if (errorData.invalid_token) {
+          setIsSubmitting(false);
+          setShowPasswordDialog(false);
+          setShowInvalidPage(true);
+        }
+        throw new Error(errorData.error || "Failed to submit details");
       }
 
       const contentType = res.headers.get("content-type") || "";
@@ -212,6 +236,13 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
 
       // a.remove();
 
+      if (isEditing) {
+        toast({
+          title: "Submitted successfully",
+          description: "New entry added",
+        });
+        return setIsEditing(null);
+      }
       toast({
         title: "Submitted successfully",
         description: "You can now close this tab.",
@@ -232,18 +263,7 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
   };
 
   const handleSubmitClick = () => {
-    if (isEditMode) {
-      // Show overwrite confirmation first if in edit mode
-      setShowOverwriteConfirm(true);
-    } else {
-      setShowPasswordDialog(true);
-      setError("");
-      setPassword("");
-    }
-  };
-
-  const handleOverwriteConfirm = () => {
-    setShowOverwriteConfirm(false);
+    if (isEditing) return processForms("");
     setShowPasswordDialog(true);
     setError("");
     setPassword("");
@@ -266,9 +286,7 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
         <h2 className="text-2xl font-bold text-foreground mb-2">
           Forms Ready for Submission
         </h2>
-        <p className="text-muted-foreground">
-          Review your data and submit to generate PDF
-        </p>
+        <p className="text-muted-foreground">Review your data and submit</p>
       </div>
 
       {/* API Configuration */}
@@ -455,7 +473,7 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
 
       {/* Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-2rem)] rounded-lg lg:w-auto sm:-translate-y-1/2 top-[30dvh] sm:top-1/2">
           <DialogHeader>
             <DialogTitle>Confirm Submission</DialogTitle>
             <DialogDescription>
@@ -492,46 +510,26 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Overwrite Confirmation Dialog */}
-      <Dialog
-        open={showOverwriteConfirm}
-        onOpenChange={setShowOverwriteConfirm}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-destructive">
-              Overwrite Existing Records?
-            </DialogTitle>
-            <DialogDescription className="space-y-2">
-              <p>
-                You are about to submit corrected data for an existing user.
-              </p>
-              <p className="font-medium text-foreground">
-                This will permanently overwrite:
-              </p>
-              <ul className="list-disc list-inside text-sm space-y-1 ml-2">
-                <li>The existing JSON data file</li>
-                <li>The existing PDF document</li>
-                <li>The existing TSV record</li>
-              </ul>
-              <p className="text-destructive font-medium mt-2">
-                This action cannot be undone.
-              </p>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowOverwriteConfirm(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleOverwriteConfirm}>
-              Yes, Overwrite
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AlertDialog open={showInvalidPage} onOpenChange={setShowInvalidPage}>
+        <AlertDialogContent className="w-[calc(100%-2rem)] rounded-lg lg:w-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <TriangleAlert /> Invalid session
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-justify">
+                <p>
+                  This page is not valid. To gain access to the page, scan the
+                  QR provided by the <strong>admin</strong>{" "}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {/* <AlertDialogFooter>
+                  <AlertDialogAction>I Understand</AlertDialogAction>
+                </AlertDialogFooter> */}
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Document Preview Modal */}
       {previewUrl && (

@@ -81,6 +81,7 @@ export const KYCDetailsStep: React.FC<KYCDetailsStepProps> = ({
           placeholder="If available (e.g., ABCDE1234F)"
           error={errors.pan_no}
           maxLength={10}
+          required
           sensitive
         />
       </div>

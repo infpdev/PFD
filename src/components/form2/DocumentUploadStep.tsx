@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, Eye, X, FileText, Camera } from "lucide-react";
 import type { DocumentUploads } from "@/types/epf-forms";
+import { maybeCompress } from "@/lib/document-storage";
 
 interface DocumentUploadStepProps {
   documents: DocumentUploads;
@@ -34,15 +35,27 @@ const UploadField: React.FC<UploadFieldProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      // Create preview URL
+    if (!selectedFile) return;
+
+    try {
+      // 🔽 Compress first
+      const compressedFile = await maybeCompress(selectedFile);
+
+      // 🔍 Optional debug
+      console.log(
+        `File size: ${(selectedFile.size / 1024).toFixed(1)} KB → ${(compressedFile.size / 1024).toFixed(1)} KB`,
+      );
+
+      // 👀 Generate preview
       const reader = new FileReader();
       reader.onload = () => {
-        onFileChange(selectedFile, reader.result as string);
+        onFileChange(compressedFile, reader.result as string);
       };
-      reader.readAsDataURL(selectedFile);
+      reader.readAsDataURL(compressedFile);
+    } catch (err) {
+      console.error("Image compression failed:", err);
     }
   };
 
@@ -144,7 +157,7 @@ export const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({
         title="Document Upload"
         description="Upload required identity and bank documents"
         helpText="Upload clear images or PDFs of your documents. On mobile, you can use your camera.\nದಾಖಲೆಗಳ ಸ್ಪಷ್ಟ ಚಿತ್ರಗಳನ್ನು ಅಥವಾ PDF ಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ."
-        icon={<Upload className="h-5 w-5" />}
+        icon={<Upload className="h-5 w-5 text-foreground" />}
       >
         <div className="space-y-6">
           <UploadField
@@ -161,7 +174,7 @@ export const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({
             onPreview={() =>
               handlePreview(
                 documents.aadhaar?.preview || null,
-                documents.aadhaar?.file?.type || null
+                documents.aadhaar?.file?.type || null,
               )
             }
             error={errors.doc_aadhaar}
@@ -182,7 +195,7 @@ export const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({
             onPreview={() =>
               handlePreview(
                 documents.pan?.preview || null,
-                documents.pan?.file?.type || null
+                documents.pan?.file?.type || null,
               )
             }
             error={errors.doc_pan}
@@ -203,7 +216,7 @@ export const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({
             onPreview={() =>
               handlePreview(
                 documents.passbook?.preview || null,
-                documents.passbook?.file?.type || null
+                documents.passbook?.file?.type || null,
               )
             }
             error={errors.doc_passbook}

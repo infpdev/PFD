@@ -1,10 +1,8 @@
 import React from "react";
 import { FormField } from "@/components/FormField";
 import { FormSection } from "@/components/FormSection";
-import { SignatureCanvas } from "@/components/SignatureCanvas";
-import { FileCheck, Check } from "lucide-react";
+import { FileCheck } from "lucide-react";
 import type { DeclarationDetails } from "@/types/epf-forms";
-import { Label } from "@/components/ui/label";
 
 interface DeclarationStepProps {
   data: DeclarationDetails;
@@ -33,11 +31,11 @@ export const DeclarationStep: React.FC<DeclarationStepProps> = ({
 
   return (
     <FormSection
-      title="Declaration & Signature"
-      description="Review the undertaking and provide your signature"
+      title="Declaration"
+      description="Review the undertaking and confirm"
       icon={<FileCheck className="h-5 w-5" />}
     >
-      <div className="space-y-6 ">
+      <div className="space-y-6">
         {/* Undertaking */}
         <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
           <h4 className="font-semibold text-foreground mb-3">UNDERTAKING</h4>
@@ -74,24 +72,6 @@ export const DeclarationStep: React.FC<DeclarationStepProps> = ({
             required
             error={errors.date}
           />
-        </div>
-
-        {/* Signature */}
-        <div className=" space-y-2">
-          <Label className="text-sm font-medium text-form-label">
-            Signature of Member
-            <span className="text-destructive ml-1">*</span>
-          </Label>
-
-          <SignatureCanvas
-            onSignatureChange={(sig) => handleChange("signature_data", sig)}
-            initialSignature={data.signature_data?.image}
-            initialBbox={data.signature_data?.bbox}
-          />
-
-          {errors.signature_data && (
-            <p className="text-xs text-destructive">{errors.signature_data}</p>
-          )}
         </div>
       </div>
     </FormSection>

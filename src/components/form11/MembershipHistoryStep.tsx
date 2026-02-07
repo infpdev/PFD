@@ -149,7 +149,7 @@ export const MembershipHistoryStep: React.FC<MembershipHistoryStepProps> = ({
                     v.toUpperCase(),
                   )
                 }
-                required
+                
                 placeholder="e.g., MH/BOM/12345/123"
                 error={errors.previous_pf_account_no}
               />
@@ -161,7 +161,7 @@ export const MembershipHistoryStep: React.FC<MembershipHistoryStepProps> = ({
               type="date"
               value={previousEmployment.exit_date}
               onChange={(v) => handlePreviousChange("exit_date", v)}
-              required
+              
               error={errors.exit_date}
             />
 
