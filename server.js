@@ -1,4 +1,4 @@
-import "./bootstrap.js"; 
+import "./db/bootstrap.js";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
