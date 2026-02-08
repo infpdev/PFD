@@ -148,7 +148,7 @@ const ServerConfigPage = ({ setPage }) => {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-foreground">
-        Server Configuration
+        Session Configuration
       </h1>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -179,7 +179,7 @@ const ServerConfigPage = ({ setPage }) => {
               </>
             ) : (
               <p className="text-sm text-muted-foreground text-center pt-5">
-                Inactive, start the server to display QR
+                Inactive, start the session to display QR
               </p>
             )}
           </CardContent>
@@ -188,8 +188,8 @@ const ServerConfigPage = ({ setPage }) => {
         {/* Server Status Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Server Status</CardTitle>
-            <CardDescription>Control the backend server</CardDescription>
+            <CardTitle>Session Status</CardTitle>
+            <CardDescription>Toggle submission access</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
@@ -217,12 +217,12 @@ const ServerConfigPage = ({ setPage }) => {
                 {serverStatus === "running" ? (
                   <>
                     <PowerOff className="h-4 w-4" />
-                    Stop Server
+                    Stop session
                   </>
                 ) : (
                   <>
                     <Power className="h-4 w-4" />
-                    Start Server
+                    Start session
                   </>
                 )}
               </Button>
@@ -230,13 +230,14 @@ const ServerConfigPage = ({ setPage }) => {
                 <Button
                   variant="outline"
                   size="icon"
+                  title="Restart session with new intake url (token)"
                   onClick={restartServer}
                   // disabled={serverStatus === "loading"}
                   className={`gap-2 w-full transition-all overflow-hidden ${serverStatus === "running" ? "opacity-100" : "opacity-0 w-0"}`}
                 >
                   <>
                     <RefreshCw className={`h-4 w-4`} />
-                    Restart server
+                    Restart session
                   </>
                 </Button>
               }
@@ -249,12 +250,12 @@ const ServerConfigPage = ({ setPage }) => {
       <Card>
         <CardHeader>
           <CardTitle>Password Configuration</CardTitle>
-          <CardDescription>View or change the admin password</CardDescription>
+          <CardDescription>View or change the submission password</CardDescription>
         </CardHeader>
         {!token ? (
           <CardContent className="flex-1">
             <p className="text-sm text-muted-foreground text-center p-5">
-              Inactive, start the server to configure the submission password
+              Inactive, start the session to configure the submission password
             </p>
           </CardContent>
         ) : (
