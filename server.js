@@ -422,6 +422,15 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
+  const sessionId = req?.cookies?.session_id;
+  if (sessionId) {
+    const userId = sessions.get(sessionId);
+
+    if (userId) {
+      return res.status(401).redirect("/pf/admin");
+    }
+  }
+
   res.sendFile(path.resolve("dist/client/index.html"));
 });
 

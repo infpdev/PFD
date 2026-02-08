@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import Topbar from "@/components/admin/topbar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import SubmissionsPage from "@/components/admin/SubmissionsPage";
@@ -12,6 +12,16 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import NotFound from "./NotFound";
 
 const queryClient = new QueryClient();
+
+function IndexRedirect() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate("submissions", { replace: true });
+  }, [navigate]);
+
+  return null; // no UI, same as before
+}
 
 function Admin() {
   const [isDark, setIsDark] = useState(false);
@@ -40,7 +50,7 @@ function Admin() {
 
             <main className="flex-1 overflow-auto">
               <Routes>
-                <Route index element={<Navigate to="submissions" replace />} />
+                <Route index element={<IndexRedirect />} />
                 <Route
                   path="submissions"
                   element={
