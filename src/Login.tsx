@@ -138,7 +138,7 @@ function Login() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-center justify-between">
                   <div className="flex items-start">
                     <div className="flex items-center h-5">
                       <input
@@ -165,7 +165,7 @@ function Login() {
                   variant="outline"
                   disabled={isSubmitting || !password}
                   onClick={handleSubmit}
-                  className="text-foreground hover:text-current disabled:bg-muted-foreground disabled:pointer-events-auto disabled:cursor-not-allowed transition-colors py-3 px-4 rounded font-bold w-full"
+                  className="text-foreground hover:text-current disabled:hover:bg-transparent disabled:pointer-events-auto disabled:cursor-not-allowed transition-colors py-3 px-4 rounded font-bold w-full"
                 >
                   {isSubmitting ? (
                     <span className="inline-flex overflow-hidden items-center gap-2">

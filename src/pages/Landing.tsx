@@ -60,7 +60,7 @@ const Landing = () => {
             <Layout className="h-5 w-5 mr-2" />
             Go to Dashboard
           </Button>
-          <div className="-tracking-tighter text-foreground gap-2 flex items-center justify-center border-border max-w-xl">
+          <div className="-tracking-tighter flex-wrap text-foreground gap-2 flex items-center justify-center border-border max-w-xl">
             <Github className="h-5 w-5 text-primary" />
             Source code available at{" "}
             <a
