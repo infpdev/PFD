@@ -17,7 +17,7 @@ apiUrl = "";
 
 const ServerConfigPage = ({ setPage }) => {
   const [serverStatus, setServerStatus] = useState<
-    "running" | "stopped" | "loading"
+    "active" | "inactive" | "loading"
   >("loading");
   const [currentPassword, setCurrentPassword] = useState("********");
   const [showPassword, setShowPassword] = useState(false);
@@ -59,12 +59,12 @@ const ServerConfigPage = ({ setPage }) => {
         // console.log(data);
 
         setToken(data.token);
-        setServerStatus("running");
+        setServerStatus("active");
       } else {
-        setServerStatus("stopped");
+        setServerStatus("inactive");
       }
     } catch {
-      setServerStatus("stopped");
+      setServerStatus("inactive");
     }
   };
 
@@ -80,19 +80,19 @@ const ServerConfigPage = ({ setPage }) => {
 
       if (data.token) {
         setToken(data.token);
-        setServerStatus("running");
+        setServerStatus("active");
       } else {
-        setServerStatus("stopped");
+        setServerStatus("inactive");
       }
     } catch {
-      setServerStatus("stopped");
+      setServerStatus("inactive");
     }
   };
 
   const toggleServer = async () => {
     setIsTogglingServer(true);
     try {
-      const action = serverStatus === "running" ? "stop" : "start";
+      const action = serverStatus === "active" ? "stop" : "start";
       const res = await fetch(`${apiUrl}/api/intake/${action}`, {
         method: "POST",
         credentials: "include",
@@ -103,7 +103,7 @@ const ServerConfigPage = ({ setPage }) => {
       setToken(data.token);
       if (action === "start") setCurrentPassword(data.password);
 
-      setServerStatus(action === "start" ? "running" : "stopped");
+      setServerStatus(action === "start" ? "active" : "inactive");
     } catch (err) {
       console.error("Failed to toggle server:", err);
     } finally {
@@ -148,7 +148,7 @@ const ServerConfigPage = ({ setPage }) => {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-foreground">
-        Server Configuration
+        Session Configuration
       </h1>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -179,7 +179,7 @@ const ServerConfigPage = ({ setPage }) => {
               </>
             ) : (
               <p className="text-sm text-muted-foreground text-center pt-5">
-                Inactive, start the server to display QR
+                Inactive, start the session to display QR
               </p>
             )}
           </CardContent>
@@ -188,16 +188,16 @@ const ServerConfigPage = ({ setPage }) => {
         {/* Server Status Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Server Status</CardTitle>
-            <CardDescription>Control the backend server</CardDescription>
+            <CardTitle>Session Status</CardTitle>
+            <CardDescription>Toggle submission access</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <div
                 className={`w-3 h-3 rounded-full ${
-                  serverStatus === "running"
+                  serverStatus === "active"
                     ? "bg-green-500"
-                    : serverStatus === "stopped"
+                    : serverStatus === "inactive"
                       ? "bg-red-500"
                       : "bg-yellow-500 animate-pulse"
                 }`}
@@ -211,18 +211,18 @@ const ServerConfigPage = ({ setPage }) => {
               <Button
                 onClick={toggleServer}
                 disabled={isTogglingServer || serverStatus === "loading"}
-                variant={serverStatus === "running" ? "destructive" : "default"}
+                variant={serverStatus === "active" ? "destructive" : "default"}
                 className="gap-2 w-full"
               >
-                {serverStatus === "running" ? (
+                {serverStatus === "active" ? (
                   <>
                     <PowerOff className="h-4 w-4" />
-                    Stop Server
+                    Stop session
                   </>
                 ) : (
                   <>
                     <Power className="h-4 w-4" />
-                    Start Server
+                    Start session
                   </>
                 )}
               </Button>
@@ -230,13 +230,14 @@ const ServerConfigPage = ({ setPage }) => {
                 <Button
                   variant="outline"
                   size="icon"
+                  title="Restart session with new intake url (token)"
                   onClick={restartServer}
                   // disabled={serverStatus === "loading"}
-                  className={`gap-2 w-full transition-all overflow-hidden ${serverStatus === "running" ? "opacity-100" : "opacity-0 w-0"}`}
+                  className={`gap-2 w-full transition-all overflow-hidden ${serverStatus === "active" ? "opacity-100" : "opacity-0 w-0"}`}
                 >
                   <>
                     <RefreshCw className={`h-4 w-4`} />
-                    Restart server
+                    Restart session
                   </>
                 </Button>
               }
@@ -249,12 +250,12 @@ const ServerConfigPage = ({ setPage }) => {
       <Card>
         <CardHeader>
           <CardTitle>Password Configuration</CardTitle>
-          <CardDescription>View or change the admin password</CardDescription>
+          <CardDescription>View or change the submission password</CardDescription>
         </CardHeader>
         {!token ? (
           <CardContent className="flex-1">
             <p className="text-sm text-muted-foreground text-center p-5">
-              Inactive, start the server to configure the submission password
+              Inactive, start the session to configure the submission password
             </p>
           </CardContent>
         ) : (
