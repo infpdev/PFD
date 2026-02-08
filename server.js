@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import { spawn } from "child_process";
 import { WebSocketServer } from "ws";
 import express from "express";
+import multer from "multer";
 import { db } from "./db/index.js";
 import dotenv from "dotenv";
 dotenv.config();
@@ -524,8 +525,26 @@ app.post("/get-pdf", requireAuth, async (req, res) => {
   return res.send(pdfBuffer);
 });
 
-app.post("/api/forms/process", gateApiByToken, async (req, res) => {
-  const payload = req.body;
+// Multer for multipart file uploads (documents)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
+});
+
+const docUpload = upload.fields([
+  { name: "aadhaar", maxCount: 1 },
+  { name: "pan", maxCount: 1 },
+  { name: "passbook", maxCount: 1 },
+]);
+
+app.post("/api/forms/process", docUpload, gateApiByToken, async (req, res) => {
+  // Parse JSON payload from multipart field
+  let payload;
+  try {
+    payload = JSON.parse(req.body.payload || "{}");
+  } catch {
+    return res.status(400).json({ error: "Invalid payload JSON" });
+  }
 
   const memberName = payload?.forms?.form_11?.personal_details?.member_name;
 
@@ -556,7 +575,21 @@ app.post("/api/forms/process", gateApiByToken, async (req, res) => {
   }
 
   let forms = payload.forms;
-  const docs = payload.documents;
+
+  // Convert uploaded files to base64 StoredDocument for DB storage
+  const docs = {};
+  for (const key of ["aadhaar", "pan", "passbook"]) {
+    const file = req.files?.[key]?.[0];
+    if (file) {
+      const base64 = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+      docs[key] = {
+        name: file.originalname,
+        type: file.mimetype,
+        base64,
+        preview: null,
+      };
+    }
+  }
 
   const uan = forms.form_11.previous_employment.uan || "";
   const dob = forms.form_11.personal_details.date_of_birth;
@@ -568,10 +601,9 @@ app.post("/api/forms/process", gateApiByToken, async (req, res) => {
   const safeName = sanitizeName(memberName);
   const safeUan = sanitizeUan(uan);
   const safeDob = sanitizeDob(dob);
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const today = new Date().toISOString().slice(0, 10);
 
   try {
-    // ✅ INSERT with RETURNING (Postgres-safe)
     const rows = await db.query(
       `
       INSERT INTO submissions (name, uan, eno, dos, data, docs)
@@ -583,8 +615,8 @@ app.post("/api/forms/process", gateApiByToken, async (req, res) => {
         safeUan,
         eno,
         today,
-        forms, // pass objects, not strings
-        docs,
+        forms,
+        Object.keys(docs).length > 0 ? docs : null,
       ],
     );
 

@@ -40,20 +40,13 @@ const UploadField: React.FC<UploadFieldProps> = ({
     if (!selectedFile) return;
 
     try {
-      // 🔽 Compress first
       const compressedFile = await maybeCompress(selectedFile);
-
-      // 🔍 Optional debug
       console.log(
         `File size: ${(selectedFile.size / 1024).toFixed(1)} KB → ${(compressedFile.size / 1024).toFixed(1)} KB`,
       );
-
-      // 👀 Generate preview
-      const reader = new FileReader();
-      reader.onload = () => {
-        onFileChange(compressedFile, reader.result as string);
-      };
-      reader.readAsDataURL(compressedFile);
+      // Use object URL for preview instead of base64
+      const preview = URL.createObjectURL(compressedFile);
+      onFileChange(compressedFile, preview);
     } catch (err) {
       console.error("Image compression failed:", err);
     }

@@ -7,49 +7,8 @@ import type {
   Form11Data,
   Form2Data,
   DocumentUploads,
-  StoredDocumentUploads,
-  StoredDocument,
   SignatureData,
 } from "@/types/epf-forms";
-
-// Helper to convert DocumentFile to StoredDocument
-const convertDocumentToStored = async (doc: {
-  file: File;
-  preview: string | null;
-}): Promise<StoredDocument> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve({
-        name: doc.file.name,
-        type: doc.file.type,
-        base64: reader.result as string,
-        preview: null,
-      });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(doc.file);
-  });
-};
-
-// Convert all documents to storable format
-const convertDocumentsForPayload = async (
-  docs: DocumentUploads,
-): Promise<StoredDocumentUploads> => {
-  const stored: StoredDocumentUploads = {};
-
-  if (docs.aadhaar) {
-    stored.aadhaar = await convertDocumentToStored(docs.aadhaar);
-  }
-  if (docs.pan) {
-    stored.pan = await convertDocumentToStored(docs.pan);
-  }
-  if (docs.passbook) {
-    stored.passbook = await convertDocumentToStored(docs.passbook);
-  }
-
-  return stored;
-};
 import {
   Dialog,
   DialogContent,
@@ -128,20 +87,7 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
     setIsSubmitting(true);
     setError("");
 
-    // Convert documents to base64 for payload
-    let storedDocuments: StoredDocumentUploads | undefined;
-    if (
-      documents &&
-      (documents.aadhaar || documents.pan || documents.passbook)
-    ) {
-      try {
-        storedDocuments = await convertDocumentsForPayload(documents);
-      } catch (err) {
-        console.error("Error converting documents:", err);
-      }
-    }
-
-    const payload = {
+    const jsonPayload = {
       forms: {
         form_11: {
           ...form11Data,
@@ -160,7 +106,6 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
           },
         },
       },
-      documents: storedDocuments,
       meta: {
         exported_at: new Date().toISOString(),
         version: "1.0",
@@ -168,10 +113,24 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
       password: submissionPassword,
     };
 
-    console.log(payload);
+    // Build multipart FormData with files as blobs (no base64)
+    const formData = new FormData();
+    formData.append("payload", JSON.stringify(jsonPayload));
+
+    if (documents?.aadhaar?.file) {
+      formData.append("aadhaar", documents.aadhaar.file);
+    }
+    if (documents?.pan?.file) {
+      formData.append("pan", documents.pan.file);
+    }
+    if (documents?.passbook?.file) {
+      formData.append("passbook", documents.passbook.file);
+    }
+
+    console.log("Submitting as multipart FormData");
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20_000); // 20 seconds
+    const timeout = setTimeout(() => controller.abort(), 20_000);
 
     try {
       const res = await fetch(`${apiUrl}/api/forms/process`, {
@@ -179,9 +138,9 @@ export const FormSummary: React.FC<FormSummaryProps> = ({
         ...(isEditing && { credentials: "include" }),
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          // No Content-Type — browser sets it with boundary for FormData
         },
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
       if (res.status === 401) {
