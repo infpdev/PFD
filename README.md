@@ -7,6 +7,8 @@ Built during an internship at Bosch to reduce manual data entry errors and strea
 ## Live Demo
 
 **[pfd-dev.onrender.com](https://pfd-dev.onrender.com)**
+<br/><br/>**Username**: dev17u
+<br/>**Password**: dev17u
 
 ## Features
 
